@@ -1,0 +1,203 @@
+/* --- OFFICIAL THEME: Deep Blue & Gold --- */
+:root {
+    --primary: #003366; /* Official Navy Blue */
+    --accent: #d4af37;  /* Metallic Gold */
+    --light: #f4f6f9;   /* Light Gray Background */
+    --text: #333;
+    --success: #27ae60;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Keep the color, but add a subtle texture image on top */
+    background-color: #f4f7f6;
+    background-image: url("https://www.transparenttextures.com/patterns/cubes.png"); /* Subtle geometric pattern */
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- LANDING PAGE SPLIT LAYOUT --- */
+.landing-wrapper {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+.landing-hero {
+    flex: 1;
+    padding: 60px 40px;
+    /* NEW: Dark blue overlay sits ON TOP of the campus image url */
+    background: linear-gradient(rgba(0, 51, 102, 0.85), rgba(0, 51, 102, 0.85)), url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;    /* Ensure image covers the whole area */
+    background-position: center; /* Center the image */
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative; /* Needed for sharp edges */
+}
+
+.landing-hero h1 { font-size: 3rem; margin-bottom: 20px; line-height: 1.1; }
+.landing-hero p { font-size: 1.2rem; opacity: 0.9; line-height: 1.6; max-width: 500px; }
+.trust-badges { margin-top: 40px; display: flex; gap: 20px; font-size: 0.9rem; opacity: 0.8; }
+
+.landing-form-container {
+    flex: 1;
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.auth-box {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* --- TABS FOR LOGIN/REGISTER --- */
+.auth-tabs {
+    display: flex;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #eee;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+    color: #888;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    transition: 0.3s;
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom: 3px solid var(--primary);
+}
+
+/* --- APP INTERFACE (HIDDEN INITIALLY) --- */
+.app-layout {
+    display: none; /* Hidden until logged in */
+    min-height: 100vh;
+}
+.app-layout.active { display: block; }
+
+/* --- NAVIGATION BAR (Internal App) --- */
+nav {
+    background-color: var(--primary);
+    color: white;
+    padding: 15px 5%;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+nav h1 { margin: 0; font-size: 1.5rem; }
+
+/* --- CONTAINERS --- */
+.container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    border-top: 5px solid var(--accent);
+}
+.hidden { display: none !important; }
+
+/* --- FORMS --- */
+.form-group, .input-row { margin-bottom: 15px; }
+label { display: block; font-weight: 600; margin-bottom: 5px; color: var(--primary); }
+input, select {
+    width: 100%; padding: 12px;
+    border: 1px solid #ddd; border-radius: 6px;
+    font-size: 1rem; background: #fafafa;
+}
+input:focus, select:focus { outline: none; border-color: var(--primary); background: white; }
+
+.subject-group {
+    background: #fff; border: 1px solid #eee;
+    padding: 20px; border-radius: 8px; margin-bottom: 20px;
+    border-left: 4px solid var(--primary);
+}
+
+/* --- BUTTONS --- */
+.btn {
+    padding: 14px 25px; border: none; border-radius: 6px;
+    cursor: pointer; font-size: 1rem; font-weight: bold; transition: 0.3s; width: 100%;
+}
+.primary-btn { background-color: var(--primary); color: white; box-shadow: 0 4px 10px rgba(0,51,102,0.2); }
+.primary-btn:hover { background-color: #002244; transform: translateY(-1px); }
+.secondary-btn { background-color: white; border: 2px solid var(--primary); color: var(--primary); }
+
+/* --- POPUP & RESULTS --- */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
+    backdrop-filter: blur(5px); z-index: 1000;
+}
+.modal-content {
+    background: white; padding: 40px; border-radius: 12px;
+    text-align: center; width: 90%; max-width: 400px;
+    border-top: 5px solid var(--success); box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+.score-display { font-size: 3.5rem; color: var(--primary); margin: 10px 0; font-weight: bold; }
+
+.course-card {
+    background: white; border: 1px solid #eee; padding: 15px;
+    margin-bottom: 10px; border-radius: 6px; border-left: 4px solid var(--success);
+}
+.cutoff-badge { background: #f0f0f0; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; color: #666; }
+
+/* --- MOBILE RESPONSIVE --- */
+@media (max-width: 768px) {
+    .landing-wrapper { flex-direction: column; }
+    .landing-hero { padding: 40px 20px; flex: 0.4; }
+    .landing-hero h1 { font-size: 2rem; }
+    .landing-form-container { padding: 20px; flex: 0.6; }
+}
+/* Add to style.css */
+.dip-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.dip-row .sub-select {
+    flex: 3;
+}
+.dip-row .grd-select {
+    flex: 1;
+}/* --- BACK BUTTON STYLING --- */
+.back-btn {
+    background-color: #f8f9fa; /* Light Gray */
+    color: var(--primary);
+    border: 2px solid #ddd;
+    padding: 10px 20px;
+    border-radius: 30px; /* Rounded pill shape */
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.back-btn:before {
+    content: "←"; /* Arrow icon */
+    margin-right: 8px;
+    font-size: 1.2rem;
+}
+
+.back-btn:hover {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    transform: translateX(-5px); /* Moves slightly left on hover */
+}

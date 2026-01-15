@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KUCCPS Career Portal</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: #f0f2f5; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        .hidden { display: none !important; }
+
+        /* --- 1. SLIDESHOW BACKGROUND CSS --- */
+        .landing-wrapper { 
+            position: relative; width: 100%; height: 100vh; 
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+
+        /* The Overlay (Dark Blue Tint) - sits on top of images */
+        .landing-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0, 51, 102, 0.9), rgba(0, 51, 102, 0.8));
+            z-index: 2;
+        }
+
+        /* The Slideshow List */
+        .cb-slideshow {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1;
+            padding: 0; margin: 0; list-style: none;
+        }
+        .cb-slideshow li { 
+            width: 100%; height: 100%; position: absolute; top: 0; left: 0; 
+            background-size: cover; background-position: center; 
+            background-repeat: no-repeat; opacity: 0; z-index: 0; 
+            animation: imageAnimation 24s linear infinite; 
+        }
+
+        /* The Images */
+        .cb-slideshow li:nth-child(1) { background-image: url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070'); } /* Graduation */
+        .cb-slideshow li:nth-child(2) { background-image: url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070'); animation-delay: 8s; } /* University Building */
+        .cb-slideshow li:nth-child(3) { background-image: url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2070'); animation-delay: 16s; } /* Library Study */
+
+        /* Animation Keyframes */
+        @keyframes imageAnimation { 
+            0% { opacity: 0; animation-timing-function: ease-in; }
+            8% { opacity: 1; animation-timing-function: ease-out; }
+            25% { opacity: 1; }
+            33% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* --- 2. LANDING CONTENT (Sits on top of everything) --- */
+        .landing-content {
+            position: relative; z-index: 10; /* Above overlay */
+            display: flex; width: 90%; max-width: 1100px;
+            justify-content: space-between; align-items: center; gap: 50px;
+        }
+
+        .flag-strip {
+            position: absolute; top: 0; left: 0; width: 100%; height: 8px;
+            background: linear-gradient(90deg, black 33%, #990000 33%, #990000 66%, #006600 66%);
+            z-index: 20;
+        }
+
+        /* Hero Text */
+        .landing-hero { color: white; flex: 1; }
+        .landing-hero h1 { font-size: 3.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 15px; }
+        .landing-hero p { font-size: 1.1rem; opacity: 0.9; font-weight: 300; line-height: 1.6; }
+        .badge {
+            background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.3); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 20px; display: inline-block; color: #fff;
+        }
+
+        /* Login Box */
+        .auth-box { 
+            background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 12px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3); width: 400px; 
+            backdrop-filter: blur(10px); border-top: 5px solid #d35400; 
+        }
+        .auth-box h3 { color: #003366; margin-bottom: 25px; font-weight: 700; text-align: center; }
+        .auth-box input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; background: #f8f9fa; }
+        .link-text { text-align: center; margin-top: 20px; font-size: 0.9rem; color: #666; }
+        .link-text a { color: #003366; text-decoration: none; font-weight: 600; }
+
+        /* Buttons */
+        .btn { cursor: pointer; border: none; padding: 14px; border-radius: 6px; font-weight: 600; font-size: 1rem; width: 100%; transition: 0.3s; }
+        .primary-btn { background: #003366; color: white; } .primary-btn:hover { background: #002244; }
+        .secondary-btn { background: #27ae60; color: white; }
+        .download-btn { background: #d35400; color: white; margin-bottom: 15px; }
+
+        /* --- 3. DASHBOARD STYLES --- */
+        .app-layout { width: 100%; min-height: 100vh; background: #f4f7f6; }
+        nav { background: #003366; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; margin: 30px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        h2 { color: #003366; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .group-header { background: #003366; color: white; padding: 10px; border-radius: 5px 5px 0 0; margin-top: 20px; font-weight: bold; }
+        .group-container { border: 1px solid #ddd; padding: 20px; border-radius: 0 0 5px 5px; background: white; margin-bottom: 20px; }
+        .input-row { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
+        .input-row label { width: 60%; font-weight: 500; }
+        .input-row select { width: 35%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .course-card { background: white; border-left: 5px solid #27ae60; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* PDF HIDDEN */
+        #pdf-template { width: 100%; max-width: 800px; background: white; padding: 40px; font-family: 'Times New Roman', serif; color: black; display: none; }
+        .pdf-header { text-align: center; border-bottom: 2px solid #003366; padding-bottom: 20px; margin-bottom: 20px; }
+        .pdf-details { margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; background: #f9f9f9; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .pdf-table th, .pdf-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .pdf-table th { background-color: #003366; color: white; }
+
+        @media (max-width: 768px) { .landing-content { flex-direction: column; text-align: center; } .auth-box { width: 100%; } }
+    </style>
+</head>
+<body>
+
+    <div id="score-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; display:flex; justify-content:center; align-items:center;">
+        <div style="background:white; padding:30px; border-radius:10px; text-align:center; width:90%; max-width:400px; box-shadow:0 5px 20px rgba(0,255,0,0.2);">
+            <div style="font-size:3rem;">🎉</div>
+            <h2 id="modal-title" style="color:#003366; margin:10px 0;">Calculation Complete!</h2>
+            <p id="modal-subtitle" style="font-size:1.1rem;">Your Weighted Cluster Points:</p>
+            <h1 id="modal-points" style="font-size:2.5rem; color:#27ae60; margin:10px 0;">0.000</h1>
+            <p id="modal-tag" style="background:#eef2f7; color:#003366; padding:5px; border-radius:5px; font-weight:bold; margin-top:5px; display:inline-block;"></p>
+            <br>
+            <button onclick="viewCourses()" class="btn primary-btn" style="margin-top:20px;">👉 See Courses I Qualify For</button>
+            <button onclick="closeModal()" style="margin-top:10px; background:transparent; border:none; color:#999; cursor:pointer;">Close</button>
+        </div>
+    </div>
+
+    <div id="pdf-template">
+        <div class="pdf-header"><h1>🇰🇪 KUCCPS Career Portal</h1><h3>Student Qualification Report</h3><p>Generated on: <span id="pdf-date"></span></p></div>
+        <div class="pdf-details">
+            <p><strong>👤 Name:</strong> <span id="pdf-name"></span></p>
+            <p><strong>🔢 Index Number:</strong> <span id="pdf-index"></span></p>
+            <p><strong>🎓 Level:</strong> <span id="pdf-level"></span></p>
+            <p><strong>📊 Weighted Points:</strong> <span id="pdf-points" style="color:green; font-weight:bold;"></span></p>
+            <p><strong>🎯 Field of Interest:</strong> <span id="pdf-field"></span></p>
+        </div>
+        <h3>✅ Qualified Courses</h3>
+        <table class="pdf-table"><thead><tr><th>Course Name</th><th>Institution</th><th>Requirement</th></tr></thead><tbody id="pdf-course-list"></tbody></table>
+        <div style="margin-top: 40px; text-align: center; font-size: 0.9rem; color: #666; border-top: 1px solid #ddd; padding-top: 10px;"><p>Official System Generated Report.</p></div>
+    </div>
+
+    <div id="landing-page" class="landing-wrapper">
+        <div class="flag-strip"></div>
+        <div class="landing-overlay"></div> <ul class="cb-slideshow">
+            <li></li> <li></li> <li></li> </ul>
+
+        <div class="landing-content">
+            <div class="landing-hero">
+                <span class="badge">🇰🇪 Official Student Portal</span>
+                <h1>Kenya Career<br>Placement Portal</h1>
+                <p>Securely calculate your Weighted Cluster Points and find your eligible Degree & Diploma courses instantly based on official ministry guidelines.</p>
+                <div style="margin-top: 30px; font-size: 0.85rem; opacity: 0.8;">
+                    <p>Verified 2026 Edition • Secure Login</p>
+                </div>
+            </div>
+
+            <div class="auth-box">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="width:60px; height:60px; background:#e3f2fd; color:#003366; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem;">🎓</div>
+                </div>
+                <form id="loginForm">
+                    <h3>Student Login</h3>
+                    <input type="number" id="login-index" placeholder="Index Number" required>
+                    <input type="password" id="login-pass" placeholder="Password" required>
+                    <button type="submit" class="btn primary-btn">Access Portal</button>
+                    <p class="link-text">New Student? <a href="#" onclick="document.getElementById('loginForm').classList.add('hidden'); document.getElementById('signupForm').classList.remove('hidden')">Create Account</a></p>
+                </form>
+                <form id="signupForm" class="hidden">
+                    <h3>Register Account</h3>
+                    <input type="number" id="signup-index" placeholder="Index Number" required>
+                    <input type="text" id="signup-name" placeholder="Full Name" required>
+                    <input type="password" id="signup-pass" placeholder="Create Password" required>
+                    <button type="submit" class="btn secondary-btn">Create Account</button>
+                    <p class="link-text">Already have an account? <a href="#" onclick="document.getElementById('signupForm').classList.add('hidden'); document.getElementById('loginForm').classList.remove('hidden')">Login here</a></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-interface" class="app-layout hidden">
+        <nav>
+            <h1>🇰🇪 Career Portal</h1>
+            <div><span id="nav-username" style="font-weight:bold; margin-right:10px;">User</span><button onclick="location.reload()" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">Logout</button></div>
+        </nav>
+        <div id="dashboard-section" class="container">
+            <h2>📊 Grade Entry Calculator</h2>
+            <form id="calculatorForm">
+                <div style="background:#e3f2fd; padding:15px; border:1px solid #2196f3; border-radius:8px; margin-bottom:20px;">
+                    <label style="font-weight:bold; color:#0d47a1;">🎓 Education Level:</label>
+                    <select id="education-level" style="width:100%; padding:10px; margin-top:5px; font-weight:bold;">
+                        <option value="degree">Degree (University)</option>
+                        <option value="diploma">Diploma (TVET/College)</option>
+                    </select>
+                </div>
+                <div style="background:#fffbf0; padding:15px; border:1px solid orange; border-radius:8px; margin-bottom:20px;">
+                    <label style="font-weight:bold;">🏆 KCSE Mean Grade:</label>
+                    <select id="mean-grade" required style="width:100%; padding:8px; margin-top:5px;">
+                        <option value="12">A</option><option value="11">A-</option><option value="10">B+</option><option value="9">B</option><option value="8">B-</option><option value="7">C+</option><option value="6">C</option><option value="5">C-</option><option value="4">D+</option><option value="3">D</option><option value="2">D-</option><option value="1">E</option>
+                    </select>
+                </div>
+                <div class="group-header">📘 Group 1: Compulsory Subjects</div>
+                <div class="group-container">
+                    <div class="input-row"><label>Mathematics</label> <select id="math" class="grade-select"></select></div>
+                    <div class="input-row"><label>English</label> <select id="eng" class="grade-select"></select></div>
+                    <div class="input-row"><label>Kiswahili</label> <select id="kis" class="grade-select"></select></div>
+                </div>
+                <div class="group-header">🧪 Group 2: Sciences</div>
+                <div class="group-container">
+                    <div class="input-row"><label>Biology</label> <select id="bio" class="grade-select"></select></div>
+                    <div class="input-row"><label>Physics</label> <select id="phy" class="grade-select"></select></div>
+                    <div class="input-row"><label>Chemistry</label> <select id="chem" class="grade-select"></select></div>
+                </div>
+                <div class="group-header">🌍 Group 3: Humanities</div>
+                <div class="group-container">
+                    <div class="input-row"><label>History</label> <select id="hist" class="grade-select"></select></div>
+                    <div class="input-row"><label>Geography</label> <select id="geo" class="grade-select"></select></div>
+                    <div class="input-row"><label>CRE / IRE / HRE</label> <select id="cre" class="grade-select"></select></div>
+                </div>
+                <div class="group-header">🛠️ Group 4 & 5: Technical / Business / Languages</div>
+                <div class="group-container" style="background: #fffbf0; border: 1px solid orange;">
+                    <div class="input-row"><label>Choose Subject Name</label> <select id="tech-subject-name" style="width: 100%; padding: 8px;"></select></div>
+                    <div class="input-row" style="margin-top:10px;"><label>Enter Grade</label> <select id="tech-subject-grade" class="grade-select"></select></div>
+                </div>
+                <div style="background:#eef2f7; padding:15px; border-left:4px solid #003366; margin-top:20px;">
+                    <label style="font-weight:bold;">🎯 Target Career Field:</label>
+                    <select id="career-field" style="width:100%; padding:10px; margin-top:5px;">
+                        <option value="edu">Education</option><option value="eng">Engineering & Technology</option>
+                        <option value="med">Health Sciences & Medicine</option><option value="agri">Agriculture</option>
+                        <option value="biz">Business & Economics</option><option value="law">Law & Administration</option>
+                        <option value="arts">Arts & Humanities</option><option value="pure">Pure Sciences</option>
+                        <option value="arch">Built Environment</option><option value="hosp">Hospitality & Tourism</option>
+                        <option value="media">Media & Creative Arts</option><option value="it">IT & Computing</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn primary-btn" style="margin-top:20px;">Calculate & Check</button>
+            </form>
+        </div>
+        <div id="results-page" class="container hidden">
+            <button onclick="document.getElementById('results-page').classList.add('hidden'); document.getElementById('dashboard-section').classList.remove('hidden');" class="btn secondary-btn" style="margin-bottom:15px;">Back</button>
+            <button onclick="downloadPDF()" class="btn download-btn">📥 Download Official Report PDF</button>
+            <div class="report-header"><h2>Qualification Report</h2></div>
+            <div id="course-list-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let fetchedCourses = [];
+        let currentStudent = { name: "User", index: "000000" };
+        let currentPoints = 0;
+
+        const gradeList = [{val:12,txt:"A"},{val:11,txt:"A-"},{val:10,txt:"B+"},{val:9,txt:"B"},{val:8,txt:"B-"},{val:7,txt:"C+"},{val:6,txt:"C"},{val:5,txt:"C-"},{val:4,txt:"D+"},{val:3,txt:"D"},{val:2,txt:"D-"},{val:1,txt:"E"},{val:0,txt:"Not Taken"}];
+        document.querySelectorAll('.grade-select').forEach(s => gradeList.forEach(g => { let o=document.createElement('option'); o.value=g.val; o.innerText=g.txt; if(g.val===0)o.selected=true; s.appendChild(o); }));
+        const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
+        techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
+
+        const handleAuth = async (url, data, successId, hideId) => {
+            try {
+                const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+                const json = await res.json();
+                if(res.ok) {
+                    if(successId) {
+                        currentStudent.name = json.user.name; currentStudent.index = data.index_number;
+                        document.getElementById('nav-username').innerText = json.user.name;
+                        document.getElementById('landing-page').classList.add('hidden');
+                        document.getElementById('app-interface').classList.remove('hidden');
+                    } else { alert("Success! Login."); document.getElementById(hideId).classList.add('hidden'); }
+                } else alert(json.error);
+            } catch(e) { alert("Server Error"); }
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('http://localhost:3000/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); });
+        document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('http://localhost:3000/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); });
+
+        document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const getVal = id => Number(document.getElementById(id).value);
+            const level = document.getElementById('education-level').value;
+            const category = document.getElementById('career-field').value;
+            const categoryName = document.getElementById('career-field').options[document.getElementById('career-field').selectedIndex].text;
+            const meanGrade = getVal('mean-grade');
+
+            const g = { math:getVal('math'), eng:getVal('eng'), kis:getVal('kis'), bio:getVal('bio'), phy:getVal('phy'), chem:getVal('chem'), hum1:getVal('hist'), hum2:getVal('geo'), hum3:getVal('cre'), tech:getVal('tech-subject-grade') };
+            let all=[g.math,g.eng,g.kis,g.bio,g.phy,g.chem,g.hum1,g.hum2,g.hum3,g.tech].sort((a,b)=>b-a);
+            let API=0; for(let i=0;i<7;i++) API+=all[i];
+            
+            const bestHum=Math.max(g.hum1,g.hum2,g.hum3); const bestSci=Math.max(g.bio,g.phy,g.chem); const bestTech=g.tech;
+            let R=0;
+            switch(category){
+                case 'eng': R=g.math+g.phy+g.chem+g.eng; break;
+                case 'med': R=g.bio+g.chem+g.math+g.eng; break;
+                case 'law': R=g.eng+g.kis+g.math+Math.max(g.hum1,bestHum); break;
+                default: R=g.math+g.eng+bestHum+bestSci;
+            }
+            const weightedPoints = Math.sqrt((R/48)*(API/84))*48;
+            currentPoints = weightedPoints.toFixed(3);
+
+            document.getElementById('modal-points').innerText = currentPoints;
+            const levelText = level === 'degree' ? "Degree Search" : "Diploma Search";
+            document.getElementById('modal-tag').innerHTML = `${levelText} | Field: ${categoryName}`;
+            document.getElementById('score-modal').classList.remove('hidden');
+
+            const res = await fetch('http://localhost:3000/recommend', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({ points: weightedPoints, category, level, meanGrade })
+            });
+            const data = await res.json();
+            fetchedCourses = data.results;
+        });
+
+        function viewCourses() {
+            document.getElementById('score-modal').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('results-page').classList.remove('hidden');
+            const cont = document.getElementById('course-list-container');
+            cont.innerHTML = "";
+            if(fetchedCourses.length) fetchedCourses.forEach(c => {
+                cont.innerHTML += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | ${c.cutoff ? 'Cutoff: '+c.cutoff : 'Diploma Course'}</p></div>`;
+            });
+            else cont.innerHTML = "<p style='text-align:center;'>No matching courses found.</p>";
+        }
+        function closeModal(){document.getElementById('score-modal').classList.add('hidden');}
+
+        function downloadPDF() {
+            const level = document.getElementById('education-level').value.toUpperCase();
+            const categoryName = document.getElementById('career-field').options[document.getElementById('career-field').selectedIndex].text;
+            document.getElementById('pdf-name').innerText = currentStudent.name;
+            document.getElementById('pdf-index').innerText = currentStudent.index;
+            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('pdf-level').innerText = level;
+            document.getElementById('pdf-field').innerText = categoryName;
+            document.getElementById('pdf-points').innerText = currentPoints;
+            
+            const tbody = document.getElementById('pdf-course-list');
+            tbody.innerHTML = "";
+            if(fetchedCourses.length > 0) {
+                fetchedCourses.slice(0, 15).forEach(c => {
+                    tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
+                });
+            } else { tbody.innerHTML = "<tr><td colspan='3'>No courses found.</td></tr>"; }
+
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block'; 
+            html2pdf().set({ margin:10, filename:`Career_Report_${currentStudent.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} }).from(element).save().then(() => { element.style.display = 'none'; });
+        }
+    </script>
+</body>
+</html>
