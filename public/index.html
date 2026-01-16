@@ -19,15 +19,11 @@
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
         }
-
-        /* The Overlay (Dark Blue Tint) - sits on top of images */
         .landing-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(0, 51, 102, 0.9), rgba(0, 51, 102, 0.8));
             z-index: 2;
         }
-
-        /* The Slideshow List */
         .cb-slideshow {
             position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1;
             padding: 0; margin: 0; list-style: none;
@@ -38,13 +34,10 @@
             background-repeat: no-repeat; opacity: 0; z-index: 0; 
             animation: imageAnimation 24s linear infinite; 
         }
+        .cb-slideshow li:nth-child(1) { background-image: url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070'); }
+        .cb-slideshow li:nth-child(2) { background-image: url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070'); animation-delay: 8s; }
+        .cb-slideshow li:nth-child(3) { background-image: url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2070'); animation-delay: 16s; }
 
-        /* The Images */
-        .cb-slideshow li:nth-child(1) { background-image: url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070'); } /* Graduation */
-        .cb-slideshow li:nth-child(2) { background-image: url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070'); animation-delay: 8s; } /* University Building */
-        .cb-slideshow li:nth-child(3) { background-image: url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2070'); animation-delay: 16s; } /* Library Study */
-
-        /* Animation Keyframes */
         @keyframes imageAnimation { 
             0% { opacity: 0; animation-timing-function: ease-in; }
             8% { opacity: 1; animation-timing-function: ease-out; }
@@ -53,20 +46,15 @@
             100% { opacity: 0; }
         }
 
-        /* --- 2. LANDING CONTENT (Sits on top of everything) --- */
         .landing-content {
-            position: relative; z-index: 10; /* Above overlay */
-            display: flex; width: 90%; max-width: 1100px;
+            position: relative; z-index: 10; display: flex; width: 90%; max-width: 1100px;
             justify-content: space-between; align-items: center; gap: 50px;
         }
-
         .flag-strip {
             position: absolute; top: 0; left: 0; width: 100%; height: 8px;
             background: linear-gradient(90deg, black 33%, #990000 33%, #990000 66%, #006600 66%);
             z-index: 20;
         }
-
-        /* Hero Text */
         .landing-hero { color: white; flex: 1; }
         .landing-hero h1 { font-size: 3.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 15px; }
         .landing-hero p { font-size: 1.1rem; opacity: 0.9; font-weight: 300; line-height: 1.6; }
@@ -75,8 +63,6 @@
             border: 1px solid rgba(255,255,255,0.3); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
             margin-bottom: 20px; display: inline-block; color: #fff;
         }
-
-        /* Login Box */
         .auth-box { 
             background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 12px; 
             box-shadow: 0 20px 50px rgba(0,0,0,0.3); width: 400px; 
@@ -85,15 +71,12 @@
         .auth-box h3 { color: #003366; margin-bottom: 25px; font-weight: 700; text-align: center; }
         .auth-box input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; background: #f8f9fa; }
         .link-text { text-align: center; margin-top: 20px; font-size: 0.9rem; color: #666; }
-        .link-text a { color: #003366; text-decoration: none; font-weight: 600; }
 
-        /* Buttons */
         .btn { cursor: pointer; border: none; padding: 14px; border-radius: 6px; font-weight: 600; font-size: 1rem; width: 100%; transition: 0.3s; }
         .primary-btn { background: #003366; color: white; } .primary-btn:hover { background: #002244; }
         .secondary-btn { background: #27ae60; color: white; }
         .download-btn { background: #d35400; color: white; margin-bottom: 15px; }
 
-        /* --- 3. DASHBOARD STYLES --- */
         .app-layout { width: 100%; min-height: 100vh; background: #f4f7f6; }
         nav { background: #003366; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .container { max-width: 800px; margin: 30px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
@@ -105,7 +88,6 @@
         .input-row select { width: 35%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
         .course-card { background: white; border-left: 5px solid #27ae60; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-        /* PDF HIDDEN */
         #pdf-template { width: 100%; max-width: 800px; background: white; padding: 40px; font-family: 'Times New Roman', serif; color: black; display: none; }
         .pdf-header { text-align: center; border-bottom: 2px solid #003366; padding-bottom: 20px; margin-bottom: 20px; }
         .pdf-details { margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; background: #f9f9f9; }
@@ -146,24 +128,17 @@
     </div>
 
     <div id="landing-page" class="landing-wrapper">
-        <div class="flag-strip"></div>
-        <div class="landing-overlay"></div> <ul class="cb-slideshow">
-            <li></li> <li></li> <li></li> </ul>
-
+        <div class="flag-strip"></div><div class="landing-overlay"></div>
+        <ul class="cb-slideshow"><li></li><li></li><li></li></ul>
         <div class="landing-content">
             <div class="landing-hero">
                 <span class="badge">🇰🇪 Official Student Portal</span>
                 <h1>Kenya Career<br>Placement Portal</h1>
                 <p>Securely calculate your Weighted Cluster Points and find your eligible Degree & Diploma courses instantly based on official ministry guidelines.</p>
-                <div style="margin-top: 30px; font-size: 0.85rem; opacity: 0.8;">
-                    <p>Verified 2026 Edition • Secure Login</p>
-                </div>
+                <div style="margin-top: 30px; font-size: 0.85rem; opacity: 0.8;"><p>Verified 2026 Edition • Secure Login</p></div>
             </div>
-
             <div class="auth-box">
-                <div style="text-align:center; margin-bottom:20px;">
-                    <div style="width:60px; height:60px; background:#e3f2fd; color:#003366; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem;">🎓</div>
-                </div>
+                <div style="text-align:center; margin-bottom:20px;"><div style="width:60px; height:60px; background:#e3f2fd; color:#003366; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem;">🎓</div></div>
                 <form id="loginForm">
                     <h3>Student Login</h3>
                     <input type="number" id="login-index" placeholder="Index Number" required>
@@ -184,59 +159,29 @@
     </div>
 
     <div id="app-interface" class="app-layout hidden">
-        <nav>
-            <h1>🇰🇪 Career Portal</h1>
-            <div><span id="nav-username" style="font-weight:bold; margin-right:10px;">User</span><button onclick="location.reload()" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">Logout</button></div>
-        </nav>
+        <nav><h1>🇰🇪 Career Portal</h1><div><span id="nav-username" style="font-weight:bold; margin-right:10px;">User</span><button onclick="location.reload()" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">Logout</button></div></nav>
         <div id="dashboard-section" class="container">
             <h2>📊 Grade Entry Calculator</h2>
             <form id="calculatorForm">
                 <div style="background:#e3f2fd; padding:15px; border:1px solid #2196f3; border-radius:8px; margin-bottom:20px;">
                     <label style="font-weight:bold; color:#0d47a1;">🎓 Education Level:</label>
-                    <select id="education-level" style="width:100%; padding:10px; margin-top:5px; font-weight:bold;">
-                        <option value="degree">Degree (University)</option>
-                        <option value="diploma">Diploma (TVET/College)</option>
-                    </select>
+                    <select id="education-level" style="width:100%; padding:10px; margin-top:5px; font-weight:bold;"><option value="degree">Degree (University)</option><option value="diploma">Diploma (TVET/College)</option></select>
                 </div>
                 <div style="background:#fffbf0; padding:15px; border:1px solid orange; border-radius:8px; margin-bottom:20px;">
                     <label style="font-weight:bold;">🏆 KCSE Mean Grade:</label>
-                    <select id="mean-grade" required style="width:100%; padding:8px; margin-top:5px;">
-                        <option value="12">A</option><option value="11">A-</option><option value="10">B+</option><option value="9">B</option><option value="8">B-</option><option value="7">C+</option><option value="6">C</option><option value="5">C-</option><option value="4">D+</option><option value="3">D</option><option value="2">D-</option><option value="1">E</option>
-                    </select>
+                    <select id="mean-grade" required style="width:100%; padding:8px; margin-top:5px;"><option value="12">A</option><option value="11">A-</option><option value="10">B+</option><option value="9">B</option><option value="8">B-</option><option value="7">C+</option><option value="6">C</option><option value="5">C-</option><option value="4">D+</option><option value="3">D</option><option value="2">D-</option><option value="1">E</option></select>
                 </div>
                 <div class="group-header">📘 Group 1: Compulsory Subjects</div>
-                <div class="group-container">
-                    <div class="input-row"><label>Mathematics</label> <select id="math" class="grade-select"></select></div>
-                    <div class="input-row"><label>English</label> <select id="eng" class="grade-select"></select></div>
-                    <div class="input-row"><label>Kiswahili</label> <select id="kis" class="grade-select"></select></div>
-                </div>
+                <div class="group-container"><div class="input-row"><label>Mathematics</label> <select id="math" class="grade-select"></select></div><div class="input-row"><label>English</label> <select id="eng" class="grade-select"></select></div><div class="input-row"><label>Kiswahili</label> <select id="kis" class="grade-select"></select></div></div>
                 <div class="group-header">🧪 Group 2: Sciences</div>
-                <div class="group-container">
-                    <div class="input-row"><label>Biology</label> <select id="bio" class="grade-select"></select></div>
-                    <div class="input-row"><label>Physics</label> <select id="phy" class="grade-select"></select></div>
-                    <div class="input-row"><label>Chemistry</label> <select id="chem" class="grade-select"></select></div>
-                </div>
+                <div class="group-container"><div class="input-row"><label>Biology</label> <select id="bio" class="grade-select"></select></div><div class="input-row"><label>Physics</label> <select id="phy" class="grade-select"></select></div><div class="input-row"><label>Chemistry</label> <select id="chem" class="grade-select"></select></div></div>
                 <div class="group-header">🌍 Group 3: Humanities</div>
-                <div class="group-container">
-                    <div class="input-row"><label>History</label> <select id="hist" class="grade-select"></select></div>
-                    <div class="input-row"><label>Geography</label> <select id="geo" class="grade-select"></select></div>
-                    <div class="input-row"><label>CRE / IRE / HRE</label> <select id="cre" class="grade-select"></select></div>
-                </div>
+                <div class="group-container"><div class="input-row"><label>History</label> <select id="hist" class="grade-select"></select></div><div class="input-row"><label>Geography</label> <select id="geo" class="grade-select"></select></div><div class="input-row"><label>CRE / IRE / HRE</label> <select id="cre" class="grade-select"></select></div></div>
                 <div class="group-header">🛠️ Group 4 & 5: Technical / Business / Languages</div>
-                <div class="group-container" style="background: #fffbf0; border: 1px solid orange;">
-                    <div class="input-row"><label>Choose Subject Name</label> <select id="tech-subject-name" style="width: 100%; padding: 8px;"></select></div>
-                    <div class="input-row" style="margin-top:10px;"><label>Enter Grade</label> <select id="tech-subject-grade" class="grade-select"></select></div>
-                </div>
+                <div class="group-container" style="background: #fffbf0; border: 1px solid orange;"><div class="input-row"><label>Choose Subject Name</label> <select id="tech-subject-name" style="width: 100%; padding: 8px;"></select></div><div class="input-row" style="margin-top:10px;"><label>Enter Grade</label> <select id="tech-subject-grade" class="grade-select"></select></div></div>
                 <div style="background:#eef2f7; padding:15px; border-left:4px solid #003366; margin-top:20px;">
                     <label style="font-weight:bold;">🎯 Target Career Field:</label>
-                    <select id="career-field" style="width:100%; padding:10px; margin-top:5px;">
-                        <option value="edu">Education</option><option value="eng">Engineering & Technology</option>
-                        <option value="med">Health Sciences & Medicine</option><option value="agri">Agriculture</option>
-                        <option value="biz">Business & Economics</option><option value="law">Law & Administration</option>
-                        <option value="arts">Arts & Humanities</option><option value="pure">Pure Sciences</option>
-                        <option value="arch">Built Environment</option><option value="hosp">Hospitality & Tourism</option>
-                        <option value="media">Media & Creative Arts</option><option value="it">IT & Computing</option>
-                    </select>
+                    <select id="career-field" style="width:100%; padding:10px; margin-top:5px;"><option value="edu">Education</option><option value="eng">Engineering & Technology</option><option value="med">Health Sciences & Medicine</option><option value="agri">Agriculture</option><option value="biz">Business & Economics</option><option value="law">Law & Administration</option><option value="arts">Arts & Humanities</option><option value="pure">Pure Sciences</option><option value="arch">Built Environment</option><option value="hosp">Hospitality & Tourism</option><option value="media">Media & Creative Arts</option><option value="it">IT & Computing</option></select>
                 </div>
                 <button type="submit" class="btn primary-btn" style="margin-top:20px;">Calculate & Check</button>
             </form>
@@ -259,6 +204,7 @@
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
 
+        // --- 🟢 FIX: USE RELATIVE PATHS (No localhost!) ---
         const handleAuth = async (url, data, successId, hideId) => {
             try {
                 const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
@@ -271,11 +217,12 @@
                         document.getElementById('app-interface').classList.remove('hidden');
                     } else { alert("Success! Login."); document.getElementById(hideId).classList.add('hidden'); }
                 } else alert(json.error);
-            } catch(e) { alert("Server Error"); }
+            } catch(e) { alert("Server Error (Check Connection)"); }
         };
 
-        document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('http://localhost:3000/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); });
-        document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('http://localhost:3000/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); });
+        // 🟢 UPDATED: Paths changed to '/login' and '/signup'
+        document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); });
+        document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); });
 
         document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -305,7 +252,8 @@
             document.getElementById('modal-tag').innerHTML = `${levelText} | Field: ${categoryName}`;
             document.getElementById('score-modal').classList.remove('hidden');
 
-            const res = await fetch('http://localhost:3000/recommend', {
+            // 🟢 UPDATED: Path changed to '/recommend'
+            const res = await fetch('/recommend', {
                 method:'POST', headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({ points: weightedPoints, category, level, meanGrade })
             });
