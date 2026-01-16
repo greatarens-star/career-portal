@@ -220,68 +220,91 @@
     </div>
 
     <script>
-        // --- 1. SETUP & GLOBALS ---
+        // GLOBALS
         let fetchedCourses = [];
-        let currentStudent = { name: "User", index: "000000", hasPaid: false }; // Added hasPaid
-        let currentPoints = 0;
+        let currentStudent = { name: "Student", index: "0000", hasPaid: 0 }; 
 
-        // Populate Dropdowns
+        // 1. SETUP DROPDOWNS (Your existing dropdown code)
         const gradeList = [{val:12,txt:"A"},{val:11,txt:"A-"},{val:10,txt:"B+"},{val:9,txt:"B"},{val:8,txt:"B-"},{val:7,txt:"C+"},{val:6,txt:"C"},{val:5,txt:"C-"},{val:4,txt:"D+"},{val:3,txt:"D"},{val:2,txt:"D-"},{val:1,txt:"E"},{val:0,txt:"Not Taken"}];
         document.querySelectorAll('.grade-select').forEach(s => gradeList.forEach(g => { let o=document.createElement('option'); o.value=g.val; o.innerText=g.txt; if(g.val===0)o.selected=true; s.appendChild(o); }));
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
 
-        // --- 2. AUTHENTICATION ---
-        const handleAuth = async (url, data, successId, hideId) => {
+        // 2. AUTH FUNCTION
+        const handleAuth = async (url, data, isLogin, hideId) => {
             try {
                 const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
                 const json = await res.json();
+                
                 if(res.ok) {
-                    if(successId) {
-                        // SAVE USER DATA AND PAYMENT STATUS
-                        currentStudent.name = json.user.name; 
-                        currentStudent.index = json.user.index;
-                        currentStudent.hasPaid = json.user.hasPaid; // Get status from server
+                    if(isLogin) {
+                        // SUCCESSFUL LOGIN
+                        console.log("User Data:", json.user);
+                        currentStudent = { 
+                            name: json.user.name, 
+                            index: json.user.index, 
+                            hasPaid: json.user.hasPaid 
+                        };
                         
-                        // Save index to LocalStorage so we know who is logged in after payment return
-                        localStorage.setItem('currentUserIndex', json.user.index);
-
-                        document.getElementById('nav-username').innerText = json.user.name;
-                        document.getElementById('landing-page').classList.add('hidden');
-                        document.getElementById('app-interface').classList.remove('hidden');
-                    } else { alert("Success! Login."); document.getElementById(hideId).classList.add('hidden'); }
-                } else alert(json.error);
-            } catch(e) { alert("Server Error"); }
+                        // SAVE to LocalStorage for persistence
+                        localStorage.setItem('userIndex', currentStudent.index);
+                        localStorage.setItem('userName', currentStudent.name);
+                        
+                        updateUI(true); // Show Dashboard
+                    } else { 
+                        alert("Account Created! Now Login."); 
+                        document.getElementById(hideId).classList.add('hidden'); 
+                    }
+                } else { alert(json.error); }
+            } catch(e) { alert("Connection Error"); }
         };
-        
-        document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); });
-        document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); });
 
-        // --- 3. SMART LOGIC: RESTORE SESSION & CHECK PAYMENT ---
-        
+        // UI SWITCHER
+        function updateUI(isLoggedIn) {
+            if(isLoggedIn) {
+                document.getElementById('nav-username').innerText = currentStudent.name;
+                document.getElementById('landing-page').classList.add('hidden');
+                document.getElementById('app-interface').classList.remove('hidden');
+                
+                // Show "Paid" Status Badge
+                if(currentStudent.hasPaid === 1) {
+                    document.getElementById('nav-username').innerHTML += " <span style='background:#27ae60; padding:2px 8px; border-radius:10px; font-size:0.8rem;'>PAID ✅</span>";
+                }
+            }
+        }
+
+        // 3. EVENT LISTENERS
+        document.getElementById('loginForm').addEventListener('submit', e => { 
+            e.preventDefault(); 
+            handleAuth('/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); 
+        });
+        document.getElementById('signupForm').addEventListener('submit', e => { 
+            e.preventDefault(); 
+            handleAuth('/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); 
+        });
+
+        // 4. PAGE LOAD (Handle Return from Paystack)
         window.addEventListener('load', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const reference = urlParams.get('reference'); 
 
-            // If returning from Paystack
+            // If we have a reference, it means we just paid!
             if (reference) {
-                // 1. Identify the user (using the ID we saved before leaving)
-                const userIndex = localStorage.getItem('currentUserIndex');
-                if(userIndex) {
-                    currentStudent.index = userIndex;
-                    
-                    // 2. Tell Server: "This user paid!"
+                const savedIndex = localStorage.getItem('userIndex');
+                const savedName = localStorage.getItem('userName');
+                
+                if (savedIndex) {
+                    // Restore User
+                    currentStudent = { name: savedName, index: savedIndex, hasPaid: 1 };
+                    updateUI(true);
+
+                    // Tell Server to Mark as Paid
                     await fetch('/verify-payment', {
                         method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ index_number: userIndex })
+                        body: JSON.stringify({ index_number: savedIndex })
                     });
-                    
-                    currentStudent.hasPaid = true; // Update local status
-                    
-                    // 3. Restore the screen
-                    document.getElementById('landing-page').classList.add('hidden');
-                    document.getElementById('app-interface').classList.remove('hidden');
-                    
+
+                    // Show Results
                     restoreAndCalculate();
                     
                     // Clean URL
@@ -290,17 +313,16 @@
             }
         });
 
-        // B. The "Calculate" Button Click
+        // 5. CALCULATE BUTTON LOGIC
         document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            saveFormData(); // Save grades first
+            saveFormData(); 
 
-            // CHECK IF PAID
-            if (currentStudent.hasPaid) {
-                // SKIP PAYMENT -> GO DIRECTLY TO RESULTS
+            if (currentStudent.hasPaid === 1) {
+                // ALREADY PAID? Just calculate!
                 restoreAndCalculate();
             } else {
-                // NOT PAID -> INITIATE PAYMENT
+                // NOT PAID? Pay!
                 initiatePayment();
             }
         });
@@ -308,133 +330,41 @@
         async function initiatePayment() {
             const btn = document.querySelector('.primary-btn');
             btn.innerText = "Processing Payment...";
-            btn.disabled = true;
-
-            const userEmail = currentStudent.index + "@student.ke";
             
             try {
                 const res = await fetch('/pay', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: userEmail, amount: 50 })
+                    body: JSON.stringify({ email: currentStudent.index + "@student.ke", amount: 50 })
                 });
                 const data = await res.json();
-                
-                if (data.authorization_url) {
-                    window.location.href = data.authorization_url;
-                } else {
-                    alert("Payment Init Failed");
-                    btn.innerText = "Calculate & Check";
-                    btn.disabled = false;
-                }
-            } catch(err) { 
-                alert("Connection Error"); 
-                btn.innerText = "Calculate & Check";
-                btn.disabled = false;
-            }
+                if (data.authorization_url) window.location.href = data.authorization_url;
+            } catch(e) { alert("Payment Error"); }
         }
 
-        // --- HELPER FUNCTIONS ---
-
+        // ... (Keep your existing saveFormData, restoreAndCalculate, viewCourses functions below) ...
         function saveFormData() {
             const formData = {
                 level: document.getElementById('education-level').value,
                 mean: document.getElementById('mean-grade').value,
                 category: document.getElementById('career-field').value,
-                math: document.getElementById('math').value,
-                eng: document.getElementById('eng').value,
-                kis: document.getElementById('kis').value,
-                bio: document.getElementById('bio').value,
-                phy: document.getElementById('phy').value,
-                chem: document.getElementById('chem').value,
-                hist: document.getElementById('hist').value,
-                geo: document.getElementById('geo').value,
-                cre: document.getElementById('cre').value,
-                tech: document.getElementById('tech-subject-grade').value
+                // ... add other fields if needed ...
             };
             localStorage.setItem('savedGrades', JSON.stringify(formData));
         }
 
         async function restoreAndCalculate() {
-            const saved = JSON.parse(localStorage.getItem('savedGrades'));
-            if(!saved) return; // Should not happen if called correctly
-
-            // Calculation Logic
-            const getVal = (key) => Number(saved[key]);
-            const g = { math:getVal('math'), eng:getVal('eng'), kis:getVal('kis'), bio:getVal('bio'), phy:getVal('phy'), chem:getVal('chem'), hum1:getVal('hist'), hum2:getVal('geo'), hum3:getVal('cre'), tech:getVal('tech') };
-            let all=[g.math,g.eng,g.kis,g.bio,g.phy,g.chem,g.hum1,g.hum2,g.hum3,g.tech].sort((a,b)=>b-a);
-            let API=0; for(let i=0;i<7;i++) API+=all[i];
-
-            const bestHum=Math.max(g.hum1,g.hum2,g.hum3); const bestSci=Math.max(g.bio,g.phy,g.chem);
-            let R=0;
-            switch(saved.category){
-                case 'eng': R=g.math+g.phy+g.chem+g.eng; break;
-                case 'med': R=g.bio+g.chem+g.math+g.eng; break;
-                case 'law': R=g.eng+g.kis+g.math+Math.max(g.hum1,bestHum); break;
-                default: R=g.math+g.eng+bestHum+bestSci;
-            }
-            const weightedPoints = Math.sqrt((R/48)*(API/84))*48;
-            currentPoints = weightedPoints.toFixed(3);
-
-            // Fetch Courses
-            const res = await fetch('/recommend', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({ points: weightedPoints, category: saved.category, level: saved.level, meanGrade: saved.mean })
-            });
-            const data = await res.json();
-            fetchedCourses = data.results;
-
-            // SHOW POPUP (Fixes the "Returning to Login" bug)
-            document.getElementById('modal-title').innerText = "Calculation Complete! 🎉";
-            document.getElementById('modal-subtitle').innerText = "Your Weighted Cluster Points:";
-            document.getElementById('modal-points').innerText = currentPoints;
+            // ... (Copy your calculation logic here from previous steps) ...
+            // Just for testing, show modal:
             document.getElementById('score-modal').classList.remove('hidden');
-            
-            // Reset Button
-            const btn = document.querySelector('.primary-btn');
-            if(btn) { btn.innerText = "Calculate & Check"; btn.disabled = false; }
         }
-
+        
         function viewCourses() {
-            // FIX: Don't reload. Just switch views.
-            document.getElementById('score-modal').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.add('hidden');
-            document.getElementById('results-page').classList.remove('hidden');
-            
-            const cont = document.getElementById('course-list-container');
-            cont.innerHTML = "";
-            if(fetchedCourses.length) fetchedCourses.forEach(c => {
-                cont.innerHTML += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | ${c.cutoff ? 'Cutoff: '+c.cutoff : 'Diploma Course'}</p></div>`;
-            });
-            else cont.innerHTML = "<p style='text-align:center;'>No matching courses found.</p>";
+             document.getElementById('score-modal').classList.add('hidden');
+             document.getElementById('dashboard-section').classList.add('hidden');
+             document.getElementById('results-page').classList.remove('hidden');
         }
         function closeModal(){document.getElementById('score-modal').classList.add('hidden');}
-
-        function downloadPDF() {
-            // Ensure elements exist
-            const level = document.getElementById('education-level').value.toUpperCase();
-            const categoryName = document.getElementById('career-field').options[document.getElementById('career-field').selectedIndex].text;
-            
-            // Fill Data
-            document.getElementById('pdf-name').innerText = currentStudent.name || "Student";
-            document.getElementById('pdf-index').innerText = currentStudent.index || "0000";
-            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
-            document.getElementById('pdf-level').innerText = level;
-            document.getElementById('pdf-field').innerText = categoryName;
-            document.getElementById('pdf-points').innerText = currentPoints;
-            
-            const tbody = document.getElementById('pdf-course-list');
-            tbody.innerHTML = "";
-            if(fetchedCourses.length > 0) {
-                fetchedCourses.slice(0, 15).forEach(c => {
-                    tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
-                });
-            } else { tbody.innerHTML = "<tr><td colspan='3'>No courses found.</td></tr>"; }
-
-            // Generate
-            const element = document.getElementById('pdf-template');
-            element.style.display = 'block'; 
-            html2pdf().set({ margin:10, filename:`Career_Report_${currentStudent.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} }).from(element).save().then(() => { element.style.display = 'none'; });
-        }
+        function downloadPDF() { /* ... */ }
     </script>
 </body>
 </html>
