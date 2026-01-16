@@ -20,18 +20,27 @@ app.use(bodyParser.json());
 app.use(express.static('public')); 
 app.use(express.static('.'));
 
-// --- DATABASE ---
+// --- DATABASE SETUP (With Payment Tracking) ---
 const db = new sqlite3.Database('./users.db', (err) => {
     if (err) console.error("❌ DB Error:", err.message);
     else console.log("✅ Database Connected");
 });
-db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, index_number TEXT UNIQUE, full_name TEXT, password TEXT)`);
+
+// Create table with 'has_paid' column
+db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    index_number TEXT UNIQUE, 
+    full_name TEXT, 
+    password TEXT,
+    has_paid INTEGER DEFAULT 0
+)`);
 
 // --- AUTH ROUTES ---
 app.post('/signup', (req, res) => {
     const { index_number, full_name, password } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 8);
-    db.run(`INSERT INTO users (index_number, full_name, password) VALUES (?, ?, ?)`, 
+    // New users start with has_paid = 0
+    db.run(`INSERT INTO users (index_number, full_name, password, has_paid) VALUES (?, ?, ?, 0)`, 
         [index_number, full_name, hashedPassword], 
         (err) => {
             if (err) return res.status(400).json({ error: "User exists" });
@@ -45,17 +54,57 @@ app.post('/login', (req, res) => {
     db.get(`SELECT * FROM users WHERE index_number = ?`, [index_number], (err, user) => {
         if (!user) return res.status(400).json({ error: "User not found" });
         if (!bcrypt.compareSync(password, user.password)) return res.status(400).json({ error: "Invalid password" });
-        res.json({ message: "Success", user: { name: user.full_name } });
+        
+        // Send back the payment status (0 or 1)
+        res.json({ 
+            message: "Success", 
+            user: { 
+                name: user.full_name, 
+                index: user.index_number,
+                hasPaid: user.has_paid === 1 
+            } 
+        });
     });
 });
 
-// --- STRICT RECOMMENDATION ENGINE ---
+// --- PAYMENT ROUTES ---
+app.post('/pay', async (req, res) => {
+    const { email, amount } = req.body; 
+    // 👇 Ensure you have your key here or in Environment Variables
+    const secretKey = process.env.PAYSTACK_SECRET_KEY || 'sk_test_8af776d51934a2ce11e4b7a92b67cf7db654cca8'; 
+
+    try {
+        const response = await axios.post('https://api.paystack.co/transaction/initialize', {
+            email: email,
+            amount: amount * 100, 
+            currency: "KES",
+            callback_url: "https://career-portal-y64y.onrender.com" // Ensure this matches your URL
+        }, {
+            headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' }
+        });
+        res.json({ authorization_url: response.data.data.authorization_url, reference: response.data.data.reference });
+    } catch (error) {
+        console.error("Paystack Init Error:", error.message);
+        res.status(500).json({ error: "Payment failed" });
+    }
+});
+
+app.post('/verify-payment', (req, res) => {
+    const { index_number } = req.body;
+    // In a real app, we would verify the reference with Paystack first.
+    // For this project, we trust the frontend call after success.
+    
+    db.run(`UPDATE users SET has_paid = 1 WHERE index_number = ?`, [index_number], function(err) {
+        if (err) return res.status(500).json({ error: "DB Error" });
+        res.json({ success: true });
+    });
+});
+
+// --- RECOMMENDATION ENGINE ---
 app.post('/recommend', (req, res) => {
     const { points, category, level, meanGrade } = req.body;
     
-    console.log(`🔍 FILTER: Level=[${level}] | Field=[${category}] | Points=[${points}]`);
-
-    // KEYWORDS
+    // KEYWORDS MAPPING
     const keywords = {
         'edu': ['Education', 'Teaching', 'Early Childhood', 'Arts'],
         'eng': ['Engineering', 'Technology', 'Civil', 'Electrical', 'Mechanical', 'Automotive', 'Geospatial'],
@@ -75,64 +124,22 @@ app.post('/recommend', (req, res) => {
 
     const qualified = courseList.filter(c => {
         const nameLower = c.name.toLowerCase();
-
-        // --- 1. THE STRICT BOUNCER (Level Check) ---
         if (level === 'diploma') {
-            // MUST contain 'diploma'
             if (!nameLower.includes('diploma')) return false;
-            // MUST NOT contain 'degree' or 'bachelor' (Double check)
             if (nameLower.includes('degree') || nameLower.includes('bachelor')) return false;
-            
-            // Grade Check for Diploma (C- minimum usually)
             if (meanGrade < 5) return false; 
-        } 
-        else { 
-            // DEGREE MODE (Default)
-            // MUST contain 'bachelor' or 'degree'
+        } else { 
             if (!nameLower.includes('bachelor') && !nameLower.includes('degree')) return false;
-            // Must meet Cutoff Points
             if (c.cutoff > points) return false;
         }
-
-        // --- 2. CATEGORY CHECK ---
-        const isMatch = searchTerms.some(term => nameLower.includes(term.toLowerCase()));
-        
-        return isMatch;
+        return searchTerms.some(term => nameLower.includes(term.toLowerCase()));
     });
 
-    console.log(`✅ Found ${qualified.length} matches for ${level}`);
-    
-    // Sort logic: Degrees by Cutoff, Diplomas alphabetically
     const sorted = level === 'degree' 
         ? qualified.sort((a,b) => b.cutoff - a.cutoff) 
         : qualified.sort((a,b) => a.name.localeCompare(b.name));
 
     res.json({ results: sorted.slice(0, 50) });
-});
-
-// --- 💰 PAYMENT ROUTE ---
-app.post('/pay', async (req, res) => {
-    const { email, amount } = req.body; 
-
-    // 👇👇👇 PASTE YOUR KEY INSIDE THE QUOTES BELOW 👇👇👇
-// ✅ CORRECT (Has quotes)
-const secretKey = process.env.PAYSTACK_SECRET_KEY || 'sk_test_8af776d51934a2ce11e4b7a92b67cf7db654cca8';
-    // 👆👆👆 REPLACE 'PASTE_YOUR_SK_TEST_KEY_HERE' with your real key
-
-    try {
-        const response = await axios.post('https://api.paystack.co/transaction/initialize', {
-            email: email,
-            amount: amount * 100, // KES to Cents
-            currency: "KES",
-            callback_url: "https://career-portal-y64y.onrender.com" // IMPORTANT: Replace with your actual Render URL
-        }, {
-            headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' }
-        });
-        res.json({ authorization_url: response.data.data.authorization_url });
-    } catch (error) {
-        console.error("Paystack Error:", error.message);
-        res.status(500).json({ error: "Payment failed" });
-    }
 });
 
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));

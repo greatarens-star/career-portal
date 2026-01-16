@@ -222,7 +222,7 @@
     <script>
         // --- 1. SETUP & GLOBALS ---
         let fetchedCourses = [];
-        let currentStudent = { name: "User", index: "000000" };
+        let currentStudent = { name: "User", index: "000000", hasPaid: false }; // Added hasPaid
         let currentPoints = 0;
 
         // Populate Dropdowns
@@ -238,7 +238,14 @@
                 const json = await res.json();
                 if(res.ok) {
                     if(successId) {
-                        currentStudent.name = json.user.name; currentStudent.index = data.index_number;
+                        // SAVE USER DATA AND PAYMENT STATUS
+                        currentStudent.name = json.user.name; 
+                        currentStudent.index = json.user.index;
+                        currentStudent.hasPaid = json.user.hasPaid; // Get status from server
+                        
+                        // Save index to LocalStorage so we know who is logged in after payment return
+                        localStorage.setItem('currentUserIndex', json.user.index);
+
                         document.getElementById('nav-username').innerText = json.user.name;
                         document.getElementById('landing-page').classList.add('hidden');
                         document.getElementById('app-interface').classList.remove('hidden');
@@ -246,32 +253,59 @@
                 } else alert(json.error);
             } catch(e) { alert("Server Error"); }
         };
+        
         document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); });
         document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); });
 
-        // --- 3. SMART PAYMENT & CALCULATION LOGIC ---
+        // --- 3. SMART LOGIC: RESTORE SESSION & CHECK PAYMENT ---
         
-        // A. Check if user just returned from Payment (Page Load Check)
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const reference = urlParams.get('reference'); // Paystack adds this to URL on return
+            const reference = urlParams.get('reference'); 
 
+            // If returning from Paystack
             if (reference) {
-                // User just paid! Retrieve saved data and calculate.
-                restoreAndCalculate();
-                // Clean the URL so if they refresh, it doesn't re-run
-                window.history.replaceState({}, document.title, "/");
+                // 1. Identify the user (using the ID we saved before leaving)
+                const userIndex = localStorage.getItem('currentUserIndex');
+                if(userIndex) {
+                    currentStudent.index = userIndex;
+                    
+                    // 2. Tell Server: "This user paid!"
+                    await fetch('/verify-payment', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ index_number: userIndex })
+                    });
+                    
+                    currentStudent.hasPaid = true; // Update local status
+                    
+                    // 3. Restore the screen
+                    document.getElementById('landing-page').classList.add('hidden');
+                    document.getElementById('app-interface').classList.remove('hidden');
+                    
+                    restoreAndCalculate();
+                    
+                    // Clean URL
+                    window.history.replaceState({}, document.title, "/");
+                }
             }
         });
 
         // B. The "Calculate" Button Click
         document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // 1. SAVE DATA: Store user inputs in browser storage
-            saveFormData();
+            saveFormData(); // Save grades first
 
-            // 2. INITIATE PAYMENT
+            // CHECK IF PAID
+            if (currentStudent.hasPaid) {
+                // SKIP PAYMENT -> GO DIRECTLY TO RESULTS
+                restoreAndCalculate();
+            } else {
+                // NOT PAID -> INITIATE PAYMENT
+                initiatePayment();
+            }
+        });
+
+        async function initiatePayment() {
             const btn = document.querySelector('.primary-btn');
             btn.innerText = "Processing Payment...";
             btn.disabled = true;
@@ -281,12 +315,12 @@
             try {
                 const res = await fetch('/pay', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: userEmail, amount: 50 }) // CHARGING KES 50
+                    body: JSON.stringify({ email: userEmail, amount: 50 })
                 });
                 const data = await res.json();
                 
                 if (data.authorization_url) {
-                    window.location.href = data.authorization_url; // Redirect to Paystack
+                    window.location.href = data.authorization_url;
                 } else {
                     alert("Payment Init Failed");
                     btn.innerText = "Calculate & Check";
@@ -297,7 +331,7 @@
                 btn.innerText = "Calculate & Check";
                 btn.disabled = false;
             }
-        });
+        }
 
         // --- HELPER FUNCTIONS ---
 
@@ -306,7 +340,6 @@
                 level: document.getElementById('education-level').value,
                 mean: document.getElementById('mean-grade').value,
                 category: document.getElementById('career-field').value,
-                // Save all grades
                 math: document.getElementById('math').value,
                 eng: document.getElementById('eng').value,
                 kis: document.getElementById('kis').value,
@@ -323,11 +356,10 @@
 
         async function restoreAndCalculate() {
             const saved = JSON.parse(localStorage.getItem('savedGrades'));
-            if(!saved) return;
+            if(!saved) return; // Should not happen if called correctly
 
-            // Run Calculation Logic using saved data
+            // Calculation Logic
             const getVal = (key) => Number(saved[key]);
-            
             const g = { math:getVal('math'), eng:getVal('eng'), kis:getVal('kis'), bio:getVal('bio'), phy:getVal('phy'), chem:getVal('chem'), hum1:getVal('hist'), hum2:getVal('geo'), hum3:getVal('cre'), tech:getVal('tech') };
             let all=[g.math,g.eng,g.kis,g.bio,g.phy,g.chem,g.hum1,g.hum2,g.hum3,g.tech].sort((a,b)=>b-a);
             let API=0; for(let i=0;i<7;i++) API+=all[i];
@@ -337,17 +369,11 @@
             switch(saved.category){
                 case 'eng': R=g.math+g.phy+g.chem+g.eng; break;
                 case 'med': R=g.bio+g.chem+g.math+g.eng; break;
-                // ... (Logic simplified for brevity, works same as before)
+                case 'law': R=g.eng+g.kis+g.math+Math.max(g.hum1,bestHum); break;
                 default: R=g.math+g.eng+bestHum+bestSci;
             }
             const weightedPoints = Math.sqrt((R/48)*(API/84))*48;
             currentPoints = weightedPoints.toFixed(3);
-
-            // SHOW POPUP
-            document.getElementById('modal-title').innerText = "Payment Confirmed! 🎉";
-            document.getElementById('modal-subtitle').innerText = "Your Weighted Cluster Points:";
-            document.getElementById('modal-points').innerText = currentPoints;
-            document.getElementById('score-modal').classList.remove('hidden');
 
             // Fetch Courses
             const res = await fetch('/recommend', {
@@ -356,12 +382,24 @@
             });
             const data = await res.json();
             fetchedCourses = data.results;
+
+            // SHOW POPUP (Fixes the "Returning to Login" bug)
+            document.getElementById('modal-title').innerText = "Calculation Complete! 🎉";
+            document.getElementById('modal-subtitle').innerText = "Your Weighted Cluster Points:";
+            document.getElementById('modal-points').innerText = currentPoints;
+            document.getElementById('score-modal').classList.remove('hidden');
+            
+            // Reset Button
+            const btn = document.querySelector('.primary-btn');
+            if(btn) { btn.innerText = "Calculate & Check"; btn.disabled = false; }
         }
 
         function viewCourses() {
+            // FIX: Don't reload. Just switch views.
             document.getElementById('score-modal').classList.add('hidden');
             document.getElementById('dashboard-section').classList.add('hidden');
             document.getElementById('results-page').classList.remove('hidden');
+            
             const cont = document.getElementById('course-list-container');
             cont.innerHTML = "";
             if(fetchedCourses.length) fetchedCourses.forEach(c => {
@@ -371,8 +409,32 @@
         }
         function closeModal(){document.getElementById('score-modal').classList.add('hidden');}
 
-        // PDF Generator (Same as before)
-        function downloadPDF() { /* ... existing code ... */ }
+        function downloadPDF() {
+            // Ensure elements exist
+            const level = document.getElementById('education-level').value.toUpperCase();
+            const categoryName = document.getElementById('career-field').options[document.getElementById('career-field').selectedIndex].text;
+            
+            // Fill Data
+            document.getElementById('pdf-name').innerText = currentStudent.name || "Student";
+            document.getElementById('pdf-index').innerText = currentStudent.index || "0000";
+            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('pdf-level').innerText = level;
+            document.getElementById('pdf-field').innerText = categoryName;
+            document.getElementById('pdf-points').innerText = currentPoints;
+            
+            const tbody = document.getElementById('pdf-course-list');
+            tbody.innerHTML = "";
+            if(fetchedCourses.length > 0) {
+                fetchedCourses.slice(0, 15).forEach(c => {
+                    tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
+                });
+            } else { tbody.innerHTML = "<tr><td colspan='3'>No courses found.</td></tr>"; }
+
+            // Generate
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block'; 
+            html2pdf().set({ margin:10, filename:`Career_Report_${currentStudent.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} }).from(element).save().then(() => { element.style.display = 'none'; });
+        }
     </script>
 </body>
 </html>
