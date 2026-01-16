@@ -10,14 +10,19 @@
     
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
-        body { background-color: #f0f2f5; height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        body { background-color: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; }
         .hidden { display: none !important; }
 
         /* --- 1. SLIDESHOW BACKGROUND CSS --- */
         .landing-wrapper { 
-            position: relative; width: 100%; height: 100vh; 
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
+            position: relative; 
+            width: 100%; 
+            min-height: 100vh; /* Changed from height to min-height */
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            overflow: hidden; /* Hide overflow only on Desktop */
+            padding: 20px; /* Add padding to prevent edge touching */
         }
         .landing-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -47,7 +52,7 @@
         }
 
         .landing-content {
-            position: relative; z-index: 10; display: flex; width: 90%; max-width: 1100px;
+            position: relative; z-index: 10; display: flex; width: 100%; max-width: 1100px;
             justify-content: space-between; align-items: center; gap: 50px;
         }
         .flag-strip {
@@ -95,7 +100,27 @@
         .pdf-table th, .pdf-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .pdf-table th { background-color: #003366; color: white; }
 
-        @media (max-width: 768px) { .landing-content { flex-direction: column; text-align: center; } .auth-box { width: 100%; } }
+        /* --- MOBILE RESPONSIVE FIXES --- */
+        @media (max-width: 768px) { 
+            .landing-wrapper {
+                height: auto; /* Allow height to grow */
+                overflow-y: auto; /* Enable scrolling */
+                padding: 60px 20px 40px 20px; /* Top padding clears the flag strip */
+                display: block; /* Stack elements */
+            }
+            .landing-content { 
+                flex-direction: column; 
+                text-align: center; 
+                gap: 30px;
+            }
+            .landing-hero { margin-right: 0; margin-bottom: 20px; }
+            .landing-hero h1 { font-size: 2.2rem; } /* Smaller text for phone */
+            .auth-box { 
+                width: 100%; 
+                padding: 25px; /* Smaller padding inside box */
+            } 
+            nav { padding: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -204,7 +229,6 @@
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
 
-        // --- 🟢 FIX: USE RELATIVE PATHS (No localhost!) ---
         const handleAuth = async (url, data, successId, hideId) => {
             try {
                 const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
@@ -220,7 +244,6 @@
             } catch(e) { alert("Server Error (Check Connection)"); }
         };
 
-        // 🟢 UPDATED: Paths changed to '/login' and '/signup'
         document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); });
         document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); });
 
@@ -252,7 +275,6 @@
             document.getElementById('modal-tag').innerHTML = `${levelText} | Field: ${categoryName}`;
             document.getElementById('score-modal').classList.remove('hidden');
 
-            // 🟢 UPDATED: Path changed to '/recommend'
             const res = await fetch('/recommend', {
                 method:'POST', headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({ points: weightedPoints, category, level, meanGrade })
