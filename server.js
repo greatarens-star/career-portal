@@ -1,3 +1,4 @@
+const axios = require('axios');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
@@ -107,6 +108,30 @@ app.post('/recommend', (req, res) => {
         : qualified.sort((a,b) => a.name.localeCompare(b.name));
 
     res.json({ results: sorted.slice(0, 50) });
+});
+
+// --- 💰 PAYMENT ROUTE ---
+app.post('/pay', async (req, res) => {
+    const { email, amount } = req.body; 
+
+    // 👇👇👇 PASTE YOUR KEY INSIDE THE QUOTES BELOW 👇👇👇
+    const secretKey = sk_test_8af776d51934a2ce11e4b7a92b67cf7db654cca8 || 'PASTE_YOUR_SK_TEST_KEY_HERE'; 
+    // 👆👆👆 REPLACE 'PASTE_YOUR_SK_TEST_KEY_HERE' with your real key
+
+    try {
+        const response = await axios.post('https://api.paystack.co/transaction/initialize', {
+            email: email,
+            amount: amount * 100, // KES to Cents
+            currency: "KES",
+            callback_url: "https://career-portal-y64y.onrender.com" // IMPORTANT: Replace with your actual Render URL
+        }, {
+            headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' }
+        });
+        res.json({ authorization_url: response.data.data.authorization_url });
+    } catch (error) {
+        console.error("Paystack Error:", error.message);
+        res.status(500).json({ error: "Payment failed" });
+    }
 });
 
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
