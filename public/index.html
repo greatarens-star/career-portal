@@ -13,66 +13,24 @@
         body { background-color: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; }
         .hidden { display: none !important; }
 
-        /* --- 1. SLIDESHOW BACKGROUND CSS --- */
-        .landing-wrapper { 
-            position: relative; 
-            width: 100%; 
-            min-height: 100vh; /* Changed from height to min-height */
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            overflow: hidden; /* Hide overflow only on Desktop */
-            padding: 20px; /* Add padding to prevent edge touching */
-        }
-        .landing-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(0, 51, 102, 0.9), rgba(0, 51, 102, 0.8));
-            z-index: 2;
-        }
-        .cb-slideshow {
-            position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1;
-            padding: 0; margin: 0; list-style: none;
-        }
-        .cb-slideshow li { 
-            width: 100%; height: 100%; position: absolute; top: 0; left: 0; 
-            background-size: cover; background-position: center; 
-            background-repeat: no-repeat; opacity: 0; z-index: 0; 
-            animation: imageAnimation 24s linear infinite; 
-        }
+        /* --- LANDING & SLIDESHOW --- */
+        .landing-wrapper { position: relative; width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 20px; }
+        .landing-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0, 51, 102, 0.9), rgba(0, 51, 102, 0.8)); z-index: 2; }
+        .cb-slideshow { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1; padding: 0; margin: 0; list-style: none; }
+        .cb-slideshow li { width: 100%; height: 100%; position: absolute; top: 0; left: 0; background-size: cover; background-position: center; background-repeat: no-repeat; opacity: 0; z-index: 0; animation: imageAnimation 24s linear infinite; }
         .cb-slideshow li:nth-child(1) { background-image: url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070'); }
         .cb-slideshow li:nth-child(2) { background-image: url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070'); animation-delay: 8s; }
         .cb-slideshow li:nth-child(3) { background-image: url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2070'); animation-delay: 16s; }
+        @keyframes imageAnimation { 0% { opacity: 0; animation-timing-function: ease-in; } 8% { opacity: 1; animation-timing-function: ease-out; } 25% { opacity: 1; } 33% { opacity: 0; } 100% { opacity: 0; } }
 
-        @keyframes imageAnimation { 
-            0% { opacity: 0; animation-timing-function: ease-in; }
-            8% { opacity: 1; animation-timing-function: ease-out; }
-            25% { opacity: 1; }
-            33% { opacity: 0; }
-            100% { opacity: 0; }
-        }
-
-        .landing-content {
-            position: relative; z-index: 10; display: flex; width: 100%; max-width: 1100px;
-            justify-content: space-between; align-items: center; gap: 50px;
-        }
-        .flag-strip {
-            position: absolute; top: 0; left: 0; width: 100%; height: 8px;
-            background: linear-gradient(90deg, black 33%, #990000 33%, #990000 66%, #006600 66%);
-            z-index: 20;
-        }
+        .landing-content { position: relative; z-index: 10; display: flex; width: 100%; max-width: 1100px; justify-content: space-between; align-items: center; gap: 50px; }
+        .flag-strip { position: absolute; top: 0; left: 0; width: 100%; height: 8px; background: linear-gradient(90deg, black 33%, #990000 33%, #990000 66%, #006600 66%); z-index: 20; }
         .landing-hero { color: white; flex: 1; }
         .landing-hero h1 { font-size: 3.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 15px; }
         .landing-hero p { font-size: 1.1rem; opacity: 0.9; font-weight: 300; line-height: 1.6; }
-        .badge {
-            background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.3); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
-            margin-bottom: 20px; display: inline-block; color: #fff;
-        }
-        .auth-box { 
-            background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 12px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3); width: 400px; 
-            backdrop-filter: blur(10px); border-top: 5px solid #d35400; 
-        }
+        .badge { background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; display: inline-block; color: #fff; }
+        
+        .auth-box { background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); width: 400px; backdrop-filter: blur(10px); border-top: 5px solid #d35400; }
         .auth-box h3 { color: #003366; margin-bottom: 25px; font-weight: 700; text-align: center; }
         .auth-box input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; background: #f8f9fa; }
         .link-text { text-align: center; margin-top: 20px; font-size: 0.9rem; color: #666; }
@@ -82,10 +40,12 @@
         .secondary-btn { background: #27ae60; color: white; }
         .download-btn { background: #d35400; color: white; margin-bottom: 15px; }
 
+        /* --- APP LAYOUT --- */
         .app-layout { width: 100%; min-height: 100vh; background: #f4f7f6; }
         nav { background: #003366; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .container { max-width: 800px; margin: 30px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         h2 { color: #003366; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
         .group-header { background: #003366; color: white; padding: 10px; border-radius: 5px 5px 0 0; margin-top: 20px; font-weight: bold; }
         .group-container { border: 1px solid #ddd; padding: 20px; border-radius: 0 0 5px 5px; background: white; margin-bottom: 20px; }
         .input-row { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
@@ -100,25 +60,12 @@
         .pdf-table th, .pdf-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .pdf-table th { background-color: #003366; color: white; }
 
-        /* --- MOBILE RESPONSIVE FIXES --- */
         @media (max-width: 768px) { 
-            .landing-wrapper {
-                height: auto; /* Allow height to grow */
-                overflow-y: auto; /* Enable scrolling */
-                padding: 60px 20px 40px 20px; /* Top padding clears the flag strip */
-                display: block; /* Stack elements */
-            }
-            .landing-content { 
-                flex-direction: column; 
-                text-align: center; 
-                gap: 30px;
-            }
+            .landing-wrapper { height: auto; overflow-y: auto; padding: 60px 20px 40px 20px; display: block; }
+            .landing-content { flex-direction: column; text-align: center; gap: 30px; }
             .landing-hero { margin-right: 0; margin-bottom: 20px; }
-            .landing-hero h1 { font-size: 2.2rem; } /* Smaller text for phone */
-            .auth-box { 
-                width: 100%; 
-                padding: 25px; /* Smaller padding inside box */
-            } 
+            .landing-hero h1 { font-size: 2.2rem; }
+            .auth-box { width: 100%; padding: 25px; } 
             nav { padding: 15px; }
         }
     </style>
@@ -131,8 +78,6 @@
             <h2 id="modal-title" style="color:#003366; margin:10px 0;">Calculation Complete!</h2>
             <p id="modal-subtitle" style="font-size:1.1rem;">Your Weighted Cluster Points:</p>
             <h1 id="modal-points" style="font-size:2.5rem; color:#27ae60; margin:10px 0;">0.000</h1>
-            <p id="modal-tag" style="background:#eef2f7; color:#003366; padding:5px; border-radius:5px; font-weight:bold; margin-top:5px; display:inline-block;"></p>
-            <br>
             <button onclick="viewCourses()" class="btn primary-btn" style="margin-top:20px;">👉 See Courses I Qualify For</button>
             <button onclick="closeModal()" style="margin-top:10px; background:transparent; border:none; color:#999; cursor:pointer;">Close</button>
         </div>
@@ -196,14 +141,19 @@
                     <label style="font-weight:bold;">🏆 KCSE Mean Grade:</label>
                     <select id="mean-grade" required style="width:100%; padding:8px; margin-top:5px;"><option value="12">A</option><option value="11">A-</option><option value="10">B+</option><option value="9">B</option><option value="8">B-</option><option value="7">C+</option><option value="6">C</option><option value="5">C-</option><option value="4">D+</option><option value="3">D</option><option value="2">D-</option><option value="1">E</option></select>
                 </div>
+                
                 <div class="group-header">📘 Group 1: Compulsory Subjects</div>
                 <div class="group-container"><div class="input-row"><label>Mathematics</label> <select id="math" class="grade-select"></select></div><div class="input-row"><label>English</label> <select id="eng" class="grade-select"></select></div><div class="input-row"><label>Kiswahili</label> <select id="kis" class="grade-select"></select></div></div>
+                
                 <div class="group-header">🧪 Group 2: Sciences</div>
                 <div class="group-container"><div class="input-row"><label>Biology</label> <select id="bio" class="grade-select"></select></div><div class="input-row"><label>Physics</label> <select id="phy" class="grade-select"></select></div><div class="input-row"><label>Chemistry</label> <select id="chem" class="grade-select"></select></div></div>
+                
                 <div class="group-header">🌍 Group 3: Humanities</div>
                 <div class="group-container"><div class="input-row"><label>History</label> <select id="hist" class="grade-select"></select></div><div class="input-row"><label>Geography</label> <select id="geo" class="grade-select"></select></div><div class="input-row"><label>CRE / IRE / HRE</label> <select id="cre" class="grade-select"></select></div></div>
-                <div class="group-header">🛠️ Group 4 & 5: Technical / Business / Languages</div>
+                
+                <div class="group-header">🛠️ Group 4 & 5: Technical / Business</div>
                 <div class="group-container" style="background: #fffbf0; border: 1px solid orange;"><div class="input-row"><label>Choose Subject Name</label> <select id="tech-subject-name" style="width: 100%; padding: 8px;"></select></div><div class="input-row" style="margin-top:10px;"><label>Enter Grade</label> <select id="tech-subject-grade" class="grade-select"></select></div></div>
+                
                 <div style="background:#eef2f7; padding:15px; border-left:4px solid #003366; margin-top:20px;">
                     <label style="font-weight:bold;">🎯 Target Career Field:</label>
                     <select id="career-field" style="width:100%; padding:10px; margin-top:5px;"><option value="edu">Education</option><option value="eng">Engineering & Technology</option><option value="med">Health Sciences & Medicine</option><option value="agri">Agriculture</option><option value="biz">Business & Economics</option><option value="law">Law & Administration</option><option value="arts">Arts & Humanities</option><option value="pure">Pure Sciences</option><option value="arch">Built Environment</option><option value="hosp">Hospitality & Tourism</option><option value="media">Media & Creative Arts</option><option value="it">IT & Computing</option></select>
@@ -220,17 +170,18 @@
     </div>
 
     <script>
-        // GLOBALS
+        // --- 1. GLOBALS & SETUP ---
         let fetchedCourses = [];
         let currentStudent = { name: "Student", index: "0000", hasPaid: 0 }; 
+        let currentPoints = 0;
 
-        // 1. SETUP DROPDOWNS (Your existing dropdown code)
+        // Dropdowns setup
         const gradeList = [{val:12,txt:"A"},{val:11,txt:"A-"},{val:10,txt:"B+"},{val:9,txt:"B"},{val:8,txt:"B-"},{val:7,txt:"C+"},{val:6,txt:"C"},{val:5,txt:"C-"},{val:4,txt:"D+"},{val:3,txt:"D"},{val:2,txt:"D-"},{val:1,txt:"E"},{val:0,txt:"Not Taken"}];
         document.querySelectorAll('.grade-select').forEach(s => gradeList.forEach(g => { let o=document.createElement('option'); o.value=g.val; o.innerText=g.txt; if(g.val===0)o.selected=true; s.appendChild(o); }));
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
 
-        // 2. AUTH FUNCTION
+        // --- 2. AUTHENTICATION ---
         const handleAuth = async (url, data, isLogin, hideId) => {
             try {
                 const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
@@ -238,133 +189,185 @@
                 
                 if(res.ok) {
                     if(isLogin) {
-                        // SUCCESSFUL LOGIN
-                        console.log("User Data:", json.user);
-                        currentStudent = { 
-                            name: json.user.name, 
-                            index: json.user.index, 
-                            hasPaid: json.user.hasPaid 
-                        };
-                        
-                        // SAVE to LocalStorage for persistence
+                        currentStudent = { name: json.user.name, index: json.user.index, hasPaid: json.user.hasPaid };
                         localStorage.setItem('userIndex', currentStudent.index);
                         localStorage.setItem('userName', currentStudent.name);
-                        
-                        updateUI(true); // Show Dashboard
+                        updateUI(true);
                     } else { 
                         alert("Account Created! Now Login."); 
                         document.getElementById(hideId).classList.add('hidden'); 
                     }
                 } else { alert(json.error); }
-            } catch(e) { alert("Connection Error"); }
+            } catch(e) { alert("Server Connection Error"); }
         };
 
-        // UI SWITCHER
         function updateUI(isLoggedIn) {
             if(isLoggedIn) {
                 document.getElementById('nav-username').innerText = currentStudent.name;
                 document.getElementById('landing-page').classList.add('hidden');
                 document.getElementById('app-interface').classList.remove('hidden');
-                
-                // Show "Paid" Status Badge
                 if(currentStudent.hasPaid === 1) {
                     document.getElementById('nav-username').innerHTML += " <span style='background:#27ae60; padding:2px 8px; border-radius:10px; font-size:0.8rem;'>PAID ✅</span>";
                 }
             }
         }
 
-        // 3. EVENT LISTENERS
-        document.getElementById('loginForm').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            handleAuth('/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); 
-        });
-        document.getElementById('signupForm').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            handleAuth('/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); 
-        });
+        document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); });
+        document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); });
 
-        // 4. PAGE LOAD (Handle Return from Paystack)
+        // --- 3. PAGE LOAD & PAYMENT CHECK ---
         window.addEventListener('load', async () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const reference = urlParams.get('reference'); 
-
-            // If we have a reference, it means we just paid!
-            if (reference) {
+            if (urlParams.get('reference')) {
                 const savedIndex = localStorage.getItem('userIndex');
                 const savedName = localStorage.getItem('userName');
-                
                 if (savedIndex) {
-                    // Restore User
                     currentStudent = { name: savedName, index: savedIndex, hasPaid: 1 };
                     updateUI(true);
-
-                    // Tell Server to Mark as Paid
-                    await fetch('/verify-payment', {
-                        method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ index_number: savedIndex })
-                    });
-
-                    // Show Results
+                    await fetch('/verify-payment', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index_number: savedIndex }) });
                     restoreAndCalculate();
-                    
-                    // Clean URL
                     window.history.replaceState({}, document.title, "/");
                 }
             }
         });
 
-        // 5. CALCULATE BUTTON LOGIC
+        // --- 4. CALCULATOR BUTTON ---
         document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            saveFormData(); 
-
+            saveFormData(); // Captures the grades
+            
             if (currentStudent.hasPaid === 1) {
-                // ALREADY PAID? Just calculate!
                 restoreAndCalculate();
             } else {
-                // NOT PAID? Pay!
                 initiatePayment();
             }
         });
 
-        async function initiatePayment() {
-            const btn = document.querySelector('.primary-btn');
-            btn.innerText = "Processing Payment...";
-            
-            try {
-                const res = await fetch('/pay', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: currentStudent.index + "@student.ke", amount: 50 })
-                });
-                const data = await res.json();
-                if (data.authorization_url) window.location.href = data.authorization_url;
-            } catch(e) { alert("Payment Error"); }
-        }
-
-        // ... (Keep your existing saveFormData, restoreAndCalculate, viewCourses functions below) ...
+        // --- 5. LOGIC FUNCTIONS (FIXED) ---
+        
+        // ✅ FIXED: Now correctly captures individual subjects
         function saveFormData() {
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                return el ? parseInt(el.value) || 0 : 0;
+            };
+
             const formData = {
                 level: document.getElementById('education-level').value,
                 mean: document.getElementById('mean-grade').value,
                 category: document.getElementById('career-field').value,
-                // ... add other fields if needed ...
+                math: getVal('math'),
+                eng: getVal('eng'),
+                kis: getVal('kis'),
+                bio: getVal('bio'),
+                phy: getVal('phy'),
+                chem: getVal('chem'),
+                hist: getVal('hist'),
+                geo: getVal('geo'),
+                cre: getVal('cre'),
+                tech: getVal('tech-subject-grade') // Matches the technical subject select ID
             };
             localStorage.setItem('savedGrades', JSON.stringify(formData));
         }
 
+        async function initiatePayment() {
+            const btn = document.querySelector('.primary-btn');
+            btn.innerText = "Processing Payment...";
+            try {
+                const res = await fetch('/pay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: currentStudent.index + "@student.ke", amount: 50 }) });
+                const data = await res.json();
+                if (data.authorization_url) window.location.href = data.authorization_url;
+            } catch(e) { alert("Payment Error"); btn.innerText = "Calculate & Check"; }
+        }
+
+        // ✅ FIXED: Added the math logic to calculate points
         async function restoreAndCalculate() {
-            // ... (Copy your calculation logic here from previous steps) ...
-            // Just for testing, show modal:
-            document.getElementById('score-modal').classList.remove('hidden');
+            const saved = JSON.parse(localStorage.getItem('savedGrades'));
+            if(!saved) return;
+
+            // 1. Calculate Raw Aggregate (API) - Approx for now
+            const g = { math:saved.math, eng:saved.eng, kis:saved.kis, bio:saved.bio, phy:saved.phy, chem:saved.chem, hum1:saved.hist, hum2:saved.geo, hum3:saved.cre, tech:saved.tech };
+            let allGrades = Object.values(g).sort((a,b)=>b-a);
+            let API = 0; 
+            for(let i=0; i<7; i++) API += allGrades[i]; // Top 7 subjects
+
+            // 2. Calculate Cluster Points (R) based on Category
+            // Simple Logic: Math + Eng + Best Sci + Best Hum
+            const bestHum = Math.max(g.hum1, g.hum2, g.hum3);
+            const bestSci = Math.max(g.bio, g.phy, g.chem);
+            
+            let R = 0;
+            switch(saved.category){
+                case 'eng': R = g.math + g.phy + g.chem + g.eng; break;
+                case 'med': R = g.bio + g.chem + g.math + g.eng; break;
+                case 'law': R = g.eng + g.kis + g.math + Math.max(g.hum1, bestHum); break;
+                default: R = g.math + g.eng + bestHum + bestSci; // General Formula
+            }
+            
+            // Weighted Formula: W = sqrt( (R/48) * (API/84) ) * 48
+            const weightedPoints = Math.sqrt((R/48) * (API/84)) * 48;
+            currentPoints = weightedPoints.toFixed(3);
+
+            // 3. Fetch Recommendations
+            try {
+                const res = await fetch('/recommend', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({ points: weightedPoints, category: saved.category, level: saved.level, meanGrade: saved.mean })
+                });
+                const data = await res.json();
+                fetchedCourses = data.results;
+                
+                // Show Popup
+                document.getElementById('modal-points').innerText = currentPoints;
+                document.getElementById('score-modal').classList.remove('hidden');
+                document.querySelector('.primary-btn').innerText = "Calculate & Check"; // Reset button text
+            } catch(e) { console.log(e); }
+        }
+
+        // ✅ FIXED: Renders the course list
+        function viewCourses() {
+            document.getElementById('score-modal').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('results-page').classList.remove('hidden');
+            
+            const cont = document.getElementById('course-list-container');
+            cont.innerHTML = "";
+            
+            if(fetchedCourses && fetchedCourses.length > 0) {
+                fetchedCourses.forEach(c => {
+                    cont.innerHTML += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | ${c.cutoff ? 'Cutoff: '+c.cutoff : 'Diploma'}</p></div>`;
+                });
+            } else {
+                cont.innerHTML = "<p style='text-align:center; padding:20px;'>No matching courses found for your cluster points.</p>";
+            }
         }
         
-        function viewCourses() {
-             document.getElementById('score-modal').classList.add('hidden');
-             document.getElementById('dashboard-section').classList.add('hidden');
-             document.getElementById('results-page').classList.remove('hidden');
+        function closeModal(){ document.getElementById('score-modal').classList.add('hidden'); }
+
+        // ✅ FIXED: Generates the PDF
+        function downloadPDF() {
+            const level = document.getElementById('education-level').value.toUpperCase();
+            const categoryName = document.getElementById('career-field').options[document.getElementById('career-field').selectedIndex].text;
+            
+            document.getElementById('pdf-name').innerText = currentStudent.name || "Student";
+            document.getElementById('pdf-index').innerText = currentStudent.index || "0000";
+            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('pdf-level').innerText = level;
+            document.getElementById('pdf-field').innerText = categoryName;
+            document.getElementById('pdf-points').innerText = currentPoints;
+            
+            const tbody = document.getElementById('pdf-course-list');
+            tbody.innerHTML = "";
+            if(fetchedCourses.length > 0) {
+                fetchedCourses.slice(0, 15).forEach(c => {
+                    tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
+                });
+            } else { tbody.innerHTML = "<tr><td colspan='3'>No courses found.</td></tr>"; }
+
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block'; 
+            html2pdf().set({ margin:10, filename:`Career_Report_${currentStudent.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} }).from(element).save().then(() => { element.style.display = 'none'; });
         }
-        function closeModal(){document.getElementById('score-modal').classList.add('hidden');}
-        function downloadPDF() { /* ... */ }
     </script>
 </body>
 </html>
