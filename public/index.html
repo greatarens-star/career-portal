@@ -180,41 +180,54 @@
         document.querySelectorAll('.grade-select').forEach(s => gradeList.forEach(g => { let o=document.createElement('option'); o.value=g.val; o.innerText=g.txt; if(g.val===0)o.selected=true; s.appendChild(o); }));
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
-
-        // --- 2. AUTHENTICATION ---
+// 2. AUTH FUNCTION (Updated)
         const handleAuth = async (url, data, isLogin, hideId) => {
             try {
-                const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+                const res = await fetch(url, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify(data) 
+                });
                 const json = await res.json();
                 
                 if(res.ok) {
                     if(isLogin) {
-                        currentStudent = { name: json.user.name, index: json.user.index, hasPaid: json.user.hasPaid };
+                        // --- LOGIN SUCCESS ---
+                        currentStudent = { 
+                            name: json.user.name, 
+                            index: json.user.index, 
+                            hasPaid: json.user.hasPaid 
+                        };
+                        
+                        // Save session
                         localStorage.setItem('userIndex', currentStudent.index);
                         localStorage.setItem('userName', currentStudent.name);
-                        updateUI(true);
+                        
+                        updateUI(true); // Go to Dashboard
                     } else { 
-                        alert("Account Created! Now Login."); 
-                        document.getElementById(hideId).classList.add('hidden'); 
+                        // --- SIGNUP SUCCESS ---
+                        alert("Account Created Successfully! ✅\nPlease Login now."); 
+                        
+                        // 1. Hide the Signup Form
+                        document.getElementById('signupForm').classList.add('hidden'); 
+                        
+                        // 2. Show the Login Form (The "Redirection")
+                        document.getElementById('loginForm').classList.remove('hidden');
+                        
+                        // 3. Optional: Clear the signup inputs so they are empty next time
+                        document.getElementById('signup-index').value = '';
+                        document.getElementById('signup-name').value = '';
+                        document.getElementById('signup-pass').value = '';
                     }
-                } else { alert(json.error); }
-            } catch(e) { alert("Server Connection Error"); }
-        };
-
-        function updateUI(isLoggedIn) {
-            if(isLoggedIn) {
-                document.getElementById('nav-username').innerText = currentStudent.name;
-                document.getElementById('landing-page').classList.add('hidden');
-                document.getElementById('app-interface').classList.remove('hidden');
-                if(currentStudent.hasPaid === 1) {
-                    document.getElementById('nav-username').innerHTML += " <span style='background:#27ae60; padding:2px 8px; border-radius:10px; font-size:0.8rem;'>PAID ✅</span>";
+                } else { 
+                    alert(json.error); // Show error (e.g., "User already exists")
                 }
+            } catch(e) { 
+                console.error(e);
+                alert("Server Connection Error. Please try again."); 
             }
-        }
-
-        document.getElementById('loginForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/login', {index_number:document.getElementById('login-index').value, password:document.getElementById('login-pass').value}, true); });
-        document.getElementById('signupForm').addEventListener('submit', e => { e.preventDefault(); handleAuth('/signup', {index_number:document.getElementById('signup-index').value, full_name:document.getElementById('signup-name').value, password:document.getElementById('signup-pass').value}, false, 'signupForm'); });
-
+        };
+        
         // --- 3. PAGE LOAD & PAYMENT CHECK ---
         window.addEventListener('load', async () => {
             const urlParams = new URLSearchParams(window.location.search);

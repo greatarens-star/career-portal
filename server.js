@@ -1,6 +1,6 @@
 const axios = require('axios');
 const express = require('express');
-const { Pool } = require('pg'); // Using Postgres
+const { Pool } = require('pg'); 
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
@@ -22,10 +22,10 @@ app.use(express.static('.'));
 // --- DATABASE CONNECTION ---
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false } // Required for Render
+    ssl: { rejectUnauthorized: false }
 });
 
-// Create Table if it doesn't exist
+// Create Table
 pool.query(`
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, 
@@ -39,11 +39,10 @@ pool.query(`
     else console.log("✅ Users Table Ready");
 });
 
-// --- ROUTES ---
+// --- AUTH ROUTES ---
 app.post('/signup', async (req, res) => {
     const { index_number, full_name, password } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 8);
-    
     try {
         await pool.query(
             `INSERT INTO users (index_number, full_name, password, has_paid) VALUES ($1, $2, $3, 0)`, 
@@ -72,6 +71,7 @@ app.post('/login', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "Server Error" }); }
 });
 
+// --- PAYMENT ROUTES ---
 app.post('/pay', async (req, res) => {
     const { email, amount } = req.body; 
     const secretKey = process.env.PAYSTACK_SECRET_KEY || 'sk_test_8af776d51934a2ce11e4b7a92b67cf7db654cca8'; 
@@ -93,15 +93,65 @@ app.post('/verify-payment', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "DB Error" }); }
 });
 
-// --- RECOMMENDATION LOGIC (Keep existing logic) ---
+// --- RECOMMENDATION ENGINE (FIXED LOGIC) ---
 app.post('/recommend', (req, res) => {
+    // 1. Get inputs
     const { points, category, level, meanGrade } = req.body;
-    // ... [Your existing recommendation logic here, shortened for space] ...
-    // Since this logic doesn't use the DB, it stays exactly the same as before!
-    // Just ensure you have the full filter logic here.
     
-    // For now, returning top 50 matches:
-    res.json({ results: courseList.slice(0, 50) });
+    // 2. Define Keywords
+    const keywords = {
+        'edu': ['Education', 'Teaching', 'Early Childhood', 'Special Needs', 'B.Ed'],
+        'eng': ['Engineering', 'Civil', 'Electrical', 'Mechanical', 'Mechatronic', 'Geospatial', 'Structural', 'Telecommunication'], 
+        'med': ['Medicine', 'Nursing', 'Surgery', 'Clinical', 'Pharmacy', 'Health', 'Doctor', 'Radiography', 'Medical', 'Dental'],
+        'agri': ['Agriculture', 'Agribusiness', 'Horticulture', 'Food Science', 'Soil', 'Animal', 'Farm'],
+        'biz': ['Business', 'Commerce', 'Economics', 'Finance', 'Accounting', 'Procurement', 'Entrepreneurship', 'Human Resource'],
+        'law': ['Law', 'Legal', 'Justice'],
+        'arts': ['Sociology', 'Psychology', 'Criminology', 'Gender', 'Development Studies', 'International Relations', 'Political', 'Anthropology', 'Social Work'], 
+        'pure': ['Biology', 'Chemistry', 'Physics', 'Mathematics', 'Statistics', 'Biochemistry', 'Microbiology', 'Actuarial', 'Science'],
+        'arch': ['Architecture', 'Real Estate', 'Surveying', 'Quantity', 'Urban', 'Landscape', 'Construction'],
+        'hosp': ['Hospitality', 'Tourism', 'Travel', 'Hotel', 'Catering', 'Leisure'],
+        'media': ['Media', 'Communication', 'Journalism', 'Film', 'Public Relations', 'Broadcasting'],
+        'it': ['Computer', 'Software', 'Information Technology', 'Cyber', 'Data', 'Systems', 'Informatics']
+    };
+
+    const searchTerms = keywords[category] || [];
+    const safeLevel = level.toLowerCase().trim(); // Ensure lowercase
+
+    const qualified = courseList.filter(c => {
+        const nameLower = c.name.toLowerCase();
+        
+        // --- STRICT LEVEL CHECK ---
+        if (safeLevel === 'diploma') {
+            // 1. MUST contain "diploma"
+            if (!nameLower.includes('diploma')) return false;
+            // 2. MUST NOT contain "degree" or "bachelor" (Fixes the mixing issue)
+            if (nameLower.includes('degree') || nameLower.includes('bachelor')) return false;
+            // 3. Grade Requirement
+            if (meanGrade < 5) return false; 
+
+        } else if (safeLevel === 'degree') {
+            // 1. MUST contain "degree" or "bachelor"
+            if (!nameLower.includes('degree') && !nameLower.includes('bachelor')) return false;
+            // 2. MUST NOT contain "diploma"
+            if (nameLower.includes('diploma')) return false;
+            // 3. Cutoff Requirement
+            if (c.cutoff > points) return false;
+        
+        } else {
+            return false; // Invalid level selected
+        }
+
+        // --- KEYWORD CHECK ---
+        // At least one keyword matches
+        return searchTerms.some(term => nameLower.includes(term.toLowerCase()));
+    });
+
+    // Sort Results
+    const sorted = safeLevel === 'degree' 
+        ? qualified.sort((a,b) => b.cutoff - a.cutoff) // Degree: Highest points first
+        : qualified.sort((a,b) => a.name.localeCompare(b.name)); // Diploma: A-Z
+
+    res.json({ results: sorted.slice(0, 50) });
 });
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
