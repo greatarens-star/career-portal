@@ -115,7 +115,8 @@ app.post('/pay', async (req, res) => {
     const { email, amount } = req.body; 
 
     // 👇👇👇 PASTE YOUR KEY INSIDE THE QUOTES BELOW 👇👇👇
-    const secretKey = sk_test_8af776d51934a2ce11e4b7a92b67cf7db654cca8 || 'PASTE_YOUR_SK_TEST_KEY_HERE'; 
+// ✅ CORRECT (Has quotes)
+const secretKey = process.env.PAYSTACK_SECRET_KEY || 'sk_test_8af776d51934a2ce11e4b7a92b67cf7db654cca8';
     // 👆👆👆 REPLACE 'PASTE_YOUR_SK_TEST_KEY_HERE' with your real key
 
     try {
