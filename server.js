@@ -25,7 +25,8 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Create Table
+// --- DATABASE INIT & MIGRATION ---
+// 1. Create Users Table
 pool.query(`
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY, 
@@ -34,9 +35,15 @@ pool.query(`
         password VARCHAR(255),
         has_paid INTEGER DEFAULT 0
     );
-`, (err, res) => {
+`, (err) => {
     if (err) console.error("❌ DB Init Error:", err);
-    else console.log("✅ Users Table Ready");
+    else {
+        // 2. AUTO-MIGRATION: Add 'grades' column if it doesn't exist yet
+        pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS grades TEXT`, (err2) => {
+            if(err2) console.log("⚠️ Migration Note: " + err2.message);
+            else console.log("✅ Users Table & Grades Column Ready");
+        });
+    }
 });
 
 // --- AUTH ROUTES ---
@@ -64,11 +71,33 @@ app.post('/login', async (req, res) => {
         if (!user) return res.status(400).json({ error: "User not found" });
         if (!bcrypt.compareSync(password, user.password)) return res.status(400).json({ error: "Invalid password" });
         
+        // Return user info AND their saved grades (if any)
         res.json({ 
             message: "Success", 
-            user: { name: user.full_name, index: user.index_number, hasPaid: user.has_paid } 
+            user: { 
+                name: user.full_name, 
+                index: user.index_number, 
+                hasPaid: user.has_paid,
+                grades: user.grades ? JSON.parse(user.grades) : null // Send grades back
+            } 
         });
     } catch (err) { res.status(500).json({ error: "Server Error" }); }
+});
+
+// --- SAVE GRADES ROUTE (New!) ---
+app.post('/save-grades', async (req, res) => {
+    const { index_number, grades } = req.body;
+    try {
+        // Save the grades object as a Text String (JSON)
+        await pool.query(
+            `UPDATE users SET grades = $1 WHERE index_number = $2`, 
+            [JSON.stringify(grades), String(index_number)]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Save Error:", err);
+        res.status(500).json({ error: "Could not save grades" });
+    }
 });
 
 // --- PAYMENT ROUTES ---
@@ -93,12 +122,10 @@ app.post('/verify-payment', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "DB Error" }); }
 });
 
-// --- RECOMMENDATION ENGINE (FIXED LOGIC) ---
+// --- RECOMMENDATION ENGINE ---
 app.post('/recommend', (req, res) => {
-    // 1. Get inputs
     const { points, category, level, meanGrade } = req.body;
     
-    // 2. Define Keywords
     const keywords = {
         'edu': ['Education', 'Teaching', 'Early Childhood', 'Special Needs', 'B.Ed'],
         'eng': ['Engineering', 'Civil', 'Electrical', 'Mechanical', 'Mechatronic', 'Geospatial', 'Structural', 'Telecommunication'], 
@@ -115,41 +142,27 @@ app.post('/recommend', (req, res) => {
     };
 
     const searchTerms = keywords[category] || [];
-    const safeLevel = level.toLowerCase().trim(); // Ensure lowercase
+    const safeLevel = level.toLowerCase().trim();
 
     const qualified = courseList.filter(c => {
         const nameLower = c.name.toLowerCase();
         
-        // --- STRICT LEVEL CHECK ---
         if (safeLevel === 'diploma') {
-            // 1. MUST contain "diploma"
             if (!nameLower.includes('diploma')) return false;
-            // 2. MUST NOT contain "degree" or "bachelor" (Fixes the mixing issue)
             if (nameLower.includes('degree') || nameLower.includes('bachelor')) return false;
-            // 3. Grade Requirement
             if (meanGrade < 5) return false; 
-
         } else if (safeLevel === 'degree') {
-            // 1. MUST contain "degree" or "bachelor"
             if (!nameLower.includes('degree') && !nameLower.includes('bachelor')) return false;
-            // 2. MUST NOT contain "diploma"
             if (nameLower.includes('diploma')) return false;
-            // 3. Cutoff Requirement
             if (c.cutoff > points) return false;
-        
-        } else {
-            return false; // Invalid level selected
-        }
+        } else { return false; }
 
-        // --- KEYWORD CHECK ---
-        // At least one keyword matches
         return searchTerms.some(term => nameLower.includes(term.toLowerCase()));
     });
 
-    // Sort Results
     const sorted = safeLevel === 'degree' 
-        ? qualified.sort((a,b) => b.cutoff - a.cutoff) // Degree: Highest points first
-        : qualified.sort((a,b) => a.name.localeCompare(b.name)); // Diploma: A-Z
+        ? qualified.sort((a,b) => b.cutoff - a.cutoff) 
+        : qualified.sort((a,b) => a.name.localeCompare(b.name));
 
     res.json({ results: sorted.slice(0, 50) });
 });
