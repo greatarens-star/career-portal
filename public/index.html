@@ -34,7 +34,7 @@
         .auth-box h3 { color: #003366; margin-bottom: 25px; font-weight: 700; text-align: center; }
         .auth-box input { width: 100%; padding: 14px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; background: #f8f9fa; }
         
-        /* New Buttons CSS */
+        /* Buttons CSS */
         .btn { cursor: pointer; border: none; padding: 14px; border-radius: 6px; font-weight: 600; font-size: 1rem; width: 100%; transition: 0.3s; margin-bottom: 10px; }
         .primary-btn { background: #003366; color: white; } .primary-btn:hover { background: #002244; }
         .secondary-btn { background: #27ae60; color: white; } .secondary-btn:hover { background: #1e8449; }
@@ -179,7 +179,7 @@
             </form>
         </div>
         <div id="results-page" class="container hidden">
-            <button onclick="document.getElementById('results-page').classList.add('hidden'); document.getElementById('dashboard-section').classList.remove('hidden');" class="btn secondary-btn" style="margin-bottom:15px;">Back</button>
+            <button onclick="switchView('dashboard')" class="btn secondary-btn" style="margin-bottom:15px;">Back</button>
             <button onclick="downloadPDF()" class="btn download-btn">📥 Download Official Report PDF</button>
             <div class="report-header"><h2>Qualification Report</h2></div>
             <div id="course-list-container"></div>
@@ -198,20 +198,36 @@
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
 
-        // --- 2. SWITCHING SCREENS ---
-        function showLogin() {
+        // --- 2. SWITCHING SCREENS (UPDATED FOR PERSISTENCE) ---
+        // New helper to handle showing/hiding and SAVING state
+        function switchView(viewName) {
+            // Hide everything first
             document.getElementById('auth-selection').classList.add('hidden');
-            document.getElementById('loginForm').classList.remove('hidden');
-        }
-        function showSignup() {
-            document.getElementById('auth-selection').classList.add('hidden');
-            document.getElementById('signupForm').classList.remove('hidden');
-        }
-        function showSelection() {
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('signupForm').classList.add('hidden');
-            document.getElementById('auth-selection').classList.remove('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('results-page').classList.add('hidden');
+
+            // Show target
+            if (viewName === 'login') {
+                document.getElementById('loginForm').classList.remove('hidden');
+            } else if (viewName === 'signup') {
+                document.getElementById('signupForm').classList.remove('hidden');
+            } else if (viewName === 'selection') {
+                document.getElementById('auth-selection').classList.remove('hidden');
+            } else if (viewName === 'dashboard') {
+                document.getElementById('dashboard-section').classList.remove('hidden');
+            } else if (viewName === 'results') {
+                document.getElementById('results-page').classList.remove('hidden');
+            }
+
+            // SAVE to memory
+            localStorage.setItem('activeView', viewName);
         }
+
+        function showLogin() { switchView('login'); }
+        function showSignup() { switchView('signup'); }
+        function showSelection() { switchView('selection'); }
 
         // --- 3. AUTH FUNCTION ---
         const handleAuth = async (url, data, isLogin, hideId) => {
@@ -225,40 +241,34 @@
                 
                 if(res.ok) {
                     if(!isLogin) { 
-                        // --- SIGNUP SUCCESS ---
                         alert("Account Created Successfully! ✅\nPlease Login now."); 
                         showLogin(); 
                         document.getElementById('signup-index').value = '';
                         document.getElementById('signup-name').value = '';
                         document.getElementById('signup-pass').value = '';
                     } else {
-                        // --- LOGIN SUCCESS ---
                         currentStudent = { 
                             name: json.user.name, 
                             index: json.user.index, 
                             hasPaid: json.user.hasPaid 
                         };
                         
-                        // SAVE TO BROWSER MEMORY (Persistence)
                         localStorage.setItem('userIndex', currentStudent.index);
                         localStorage.setItem('userName', currentStudent.name);
                         
-                        updateUI(true); // Go to Dashboard
+                        updateUI(true); 
+                        
+                        // Default to dashboard if just logging in
+                        switchView('dashboard');
 
-                        // RESTORE GRADES IF THEY EXIST
                         if(json.user.grades) {
                             alert("✅ Welcome back! Loading your saved grades...");
                             localStorage.setItem('savedGrades', JSON.stringify(json.user.grades));
                             restoreForm(json.user.grades);
                         }
                     }
-                } else { 
-                    alert(json.error); 
-                }
-            } catch(e) { 
-                console.error(e);
-                alert("Server Connection Error."); 
-            }
+                } else { alert(json.error); }
+            } catch(e) { console.error(e); alert("Server Connection Error."); }
         };
 
         function updateUI(isLoggedIn) {
@@ -272,7 +282,7 @@
             }
         }
 
-        // --- 4. LOGIN LISTENER ---
+        // --- 4. LISTENERS ---
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
             loginForm.addEventListener('submit', async (e) => {
@@ -283,7 +293,6 @@
             });
         }
 
-        // --- 5. SIGNUP LISTENER ---
         document.getElementById('signupForm').addEventListener('submit', e => { 
             e.preventDefault(); 
             handleAuth('/signup', {
@@ -293,24 +302,40 @@
             }, false, 'signupForm'); 
         });
 
-        // --- 6. PAGE LOAD (THE FIX IS HERE) ---
+        // --- 5. PAGE LOAD (CRITICAL FIX HERE) ---
         window.addEventListener('load', async () => {
             
-            // Step A: Check if the user is already remembered in LocalStorage
+            // A. CHECK IF LOGGED IN
             const savedIndex = localStorage.getItem('userIndex');
             const savedName = localStorage.getItem('userName');
             
             if (savedIndex) {
-                // User was logged in! Restore them immediately.
+                // Restore User
                 currentStudent = { name: savedName, index: savedIndex, hasPaid: 0 }; 
-                updateUI(true); // Show dashboard
+                updateUI(true); 
 
-                // Attempt to restore their form data if it exists
+                // RESTORE THE SPECIFIC PAGE THEY WERE ON
+                const activeView = localStorage.getItem('activeView') || 'dashboard';
+                // Only restore dashboard/results views if logged in
+                if(activeView === 'results' || activeView === 'dashboard') {
+                    switchView(activeView);
+                } else {
+                    switchView('dashboard');
+                }
+
                 const savedGrades = JSON.parse(localStorage.getItem('savedGrades'));
                 if(savedGrades) restoreForm(savedGrades);
+            } else {
+                // NOT LOGGED IN? Check if they were on Login/Signup forms
+                const activeView = localStorage.getItem('activeView');
+                if(activeView === 'login' || activeView === 'signup') {
+                    switchView(activeView);
+                } else {
+                    switchView('selection'); // Default to buttons
+                }
             }
 
-            // Step B: Check for Paystack Payment Return
+            // B. CHECK PAYSTACK
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('reference')) {
                 if (savedIndex) {
@@ -323,17 +348,15 @@
             }
         });
 
-        // --- 7. NEW LOGOUT FUNCTION ---
+        // --- 6. LOGOUT ---
         function logoutUser() {
-            // 1. Delete the saved data so they are actually logged out
             localStorage.removeItem('userIndex');
             localStorage.removeItem('userName');
-            
-            // 2. Refresh the page to return to the login screen
+            localStorage.removeItem('activeView'); // Forget where they were
             location.reload();
         }
 
-        // --- 8. CALCULATOR BUTTON ---
+        // --- 7. CALCULATOR BUTTON ---
         document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             saveFormData(); 
@@ -344,38 +367,21 @@
             }
         });
 
-        // --- 9. LOGIC FUNCTIONS ---
+        // --- 8. LOGIC FUNCTIONS ---
         function saveFormData() {
-            const getVal = (id) => {
-                const el = document.getElementById(id);
-                return el ? parseInt(el.value) || 0 : 0;
-            };
-
+            const getVal = (id) => { const el = document.getElementById(id); return el ? parseInt(el.value) || 0 : 0; };
             const formData = {
                 level: document.getElementById('education-level').value,
                 mean: document.getElementById('mean-grade').value,
                 category: document.getElementById('career-field').value,
-                math: getVal('math'),
-                eng: getVal('eng'),
-                kis: getVal('kis'),
-                bio: getVal('bio'),
-                phy: getVal('phy'),
-                chem: getVal('chem'),
-                hist: getVal('hist'),
-                geo: getVal('geo'),
-                cre: getVal('cre'),
-                tech: getVal('tech-subject-grade'),
-                techName: document.getElementById('tech-subject-name').value 
+                math: getVal('math'), eng: getVal('eng'), kis: getVal('kis'),
+                bio: getVal('bio'), phy: getVal('phy'), chem: getVal('chem'),
+                hist: getVal('hist'), geo: getVal('geo'), cre: getVal('cre'),
+                tech: getVal('tech-subject-grade'), techName: document.getElementById('tech-subject-name').value 
             };
-            
             localStorage.setItem('savedGrades', JSON.stringify(formData));
-
             if(currentStudent.index !== "0000") {
-                fetch('/save-grades', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ index_number: currentStudent.index, grades: formData })
-                }).then(r => console.log("Grades saved to cloud"));
+                fetch('/save-grades', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index_number: currentStudent.index, grades: formData }) });
             }
         }
 
@@ -385,12 +391,8 @@
                 document.getElementById('education-level').value = data.level;
                 document.getElementById('mean-grade').value = data.mean;
                 document.getElementById('career-field').value = data.category;
-                
                 const subjects = ['math','eng','kis','bio','phy','chem','hist','geo','cre'];
-                subjects.forEach(id => {
-                    if(document.getElementById(id)) document.getElementById(id).value = data[id];
-                });
-
+                subjects.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = data[id]; });
                 if(data.tech) document.getElementById('tech-subject-grade').value = data.tech;
                 if(data.techName) document.getElementById('tech-subject-name').value = data.techName;
             } catch(e) { console.log("Error restoring form", e); }
@@ -409,15 +411,13 @@
         async function restoreAndCalculate() {
             const saved = JSON.parse(localStorage.getItem('savedGrades'));
             if(!saved) return;
-
+            // ... (Your existing math logic) ...
             const g = { math:saved.math, eng:saved.eng, kis:saved.kis, bio:saved.bio, phy:saved.phy, chem:saved.chem, hum1:saved.hist, hum2:saved.geo, hum3:saved.cre, tech:saved.tech };
             let allGrades = Object.values(g).sort((a,b)=>b-a);
             let API = 0; 
             for(let i=0; i<7; i++) API += allGrades[i]; 
-
             const bestHum = Math.max(g.hum1, g.hum2, g.hum3);
             const bestSci = Math.max(g.bio, g.phy, g.chem);
-            
             let R = 0;
             switch(saved.category){
                 case 'eng': R = g.math + g.phy + g.chem + g.eng; break;
@@ -425,18 +425,13 @@
                 case 'law': R = g.eng + g.kis + g.math + Math.max(g.hum1, bestHum); break;
                 default: R = g.math + g.eng + bestHum + bestSci; 
             }
-            
             const weightedPoints = Math.sqrt((R/48) * (API/84)) * 48;
             currentPoints = weightedPoints.toFixed(3);
 
             try {
-                const res = await fetch('/recommend', {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({ points: weightedPoints, category: saved.category, level: saved.level, meanGrade: saved.mean })
-                });
+                const res = await fetch('/recommend', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ points: weightedPoints, category: saved.category, level: saved.level, meanGrade: saved.mean }) });
                 const data = await res.json();
                 fetchedCourses = data.results;
-                
                 document.getElementById('modal-points').innerText = currentPoints;
                 document.getElementById('score-modal').classList.remove('hidden');
                 document.querySelector('.primary-btn').innerText = "Calculate & Check"; 
@@ -445,45 +440,21 @@
 
         function viewCourses() {
             document.getElementById('score-modal').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.add('hidden');
-            document.getElementById('results-page').classList.remove('hidden');
+            // USE SWITCHVIEW TO SAVE LOCATION
+            switchView('results');
             
             const cont = document.getElementById('course-list-container');
             cont.innerHTML = "";
-            
             if(fetchedCourses && fetchedCourses.length > 0) {
-                fetchedCourses.forEach(c => {
-                    cont.innerHTML += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | ${c.cutoff ? 'Cutoff: '+c.cutoff : 'Diploma'}</p></div>`;
-                });
-            } else {
-                cont.innerHTML = "<p style='text-align:center; padding:20px;'>No matching courses found for your cluster points.</p>";
-            }
+                fetchedCourses.forEach(c => { cont.innerHTML += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | ${c.cutoff ? 'Cutoff: '+c.cutoff : 'Diploma'}</p></div>`; });
+            } else { cont.innerHTML = "<p style='text-align:center; padding:20px;'>No matching courses found.</p>"; }
         }
         
         function closeModal(){ document.getElementById('score-modal').classList.add('hidden'); }
-
         function downloadPDF() {
-            const level = document.getElementById('education-level').value.toUpperCase();
-            const categoryName = document.getElementById('career-field').options[document.getElementById('career-field').selectedIndex].text;
-            
-            document.getElementById('pdf-name').innerText = currentStudent.name || "Student";
-            document.getElementById('pdf-index').innerText = currentStudent.index || "0000";
-            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
-            document.getElementById('pdf-level').innerText = level;
-            document.getElementById('pdf-field').innerText = categoryName;
-            document.getElementById('pdf-points').innerText = currentPoints;
-            
-            const tbody = document.getElementById('pdf-course-list');
-            tbody.innerHTML = "";
-            if(fetchedCourses.length > 0) {
-                fetchedCourses.slice(0, 15).forEach(c => {
-                    tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
-                });
-            } else { tbody.innerHTML = "<tr><td colspan='3'>No courses found.</td></tr>"; }
-
             const element = document.getElementById('pdf-template');
             element.style.display = 'block'; 
-            html2pdf().set({ margin:10, filename:`Career_Report_${currentStudent.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} }).from(element).save().then(() => { element.style.display = 'none'; });
+            html2pdf().from(element).save().then(() => { element.style.display = 'none'; });
         }
     </script>
 </body>
