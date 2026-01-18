@@ -140,7 +140,13 @@
     </div>
 
     <div id="app-interface" class="app-layout hidden">
-        <nav><h1>🇰🇪 Career Portal</h1><div><span id="nav-username" style="font-weight:bold; margin-right:10px;">User</span><button onclick="location.reload()" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">Logout</button></div></nav>
+        <nav>
+            <h1>🇰🇪 Career Portal</h1>
+            <div>
+                <span id="nav-username" style="font-weight:bold; margin-right:10px;">User</span>
+                <button onclick="logoutUser()" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">Logout</button>
+            </div>
+        </nav>
         <div id="dashboard-section" class="container">
             <h2>📊 Grade Entry Calculator</h2>
             <form id="calculatorForm">
@@ -192,7 +198,7 @@
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
 
-        // --- 2. SWITCHING SCREENS (NEW) ---
+        // --- 2. SWITCHING SCREENS ---
         function showLogin() {
             document.getElementById('auth-selection').classList.add('hidden');
             document.getElementById('loginForm').classList.remove('hidden');
@@ -222,10 +228,29 @@
                         // --- SIGNUP SUCCESS ---
                         alert("Account Created Successfully! ✅\nPlease Login now."); 
                         showLogin(); 
-                        
                         document.getElementById('signup-index').value = '';
                         document.getElementById('signup-name').value = '';
                         document.getElementById('signup-pass').value = '';
+                    } else {
+                        // --- LOGIN SUCCESS ---
+                        currentStudent = { 
+                            name: json.user.name, 
+                            index: json.user.index, 
+                            hasPaid: json.user.hasPaid 
+                        };
+                        
+                        // SAVE TO BROWSER MEMORY (Persistence)
+                        localStorage.setItem('userIndex', currentStudent.index);
+                        localStorage.setItem('userName', currentStudent.name);
+                        
+                        updateUI(true); // Go to Dashboard
+
+                        // RESTORE GRADES IF THEY EXIST
+                        if(json.user.grades) {
+                            alert("✅ Welcome back! Loading your saved grades...");
+                            localStorage.setItem('savedGrades', JSON.stringify(json.user.grades));
+                            restoreForm(json.user.grades);
+                        }
                     }
                 } else { 
                     alert(json.error); 
@@ -249,49 +274,12 @@
 
         // --- 4. LOGIN LISTENER ---
         const loginForm = document.getElementById('loginForm');
-        if (!loginForm) {
-            alert("❌ CRITICAL ERROR: I cannot find the Login Form in your HTML!");
-        } else {
+        if (loginForm) {
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault(); 
-                
                 const index = document.getElementById('login-index').value;
                 const pass = document.getElementById('login-pass').value;
-
-                try {
-                    const res = await fetch('/login', { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'}, 
-                        body: JSON.stringify({ index_number: index, password: pass }) 
-                    });
-
-                    const json = await res.json();
-                    
-                    if(res.ok) {
-                        currentStudent = { 
-                            name: json.user.name, 
-                            index: json.user.index, 
-                            hasPaid: json.user.hasPaid 
-                        };
-                        
-                        localStorage.setItem('userIndex', currentStudent.index);
-                        localStorage.setItem('userName', currentStudent.name);
-                        
-                        updateUI(true); // Go to Dashboard
-
-                        // RESTORE GRADES IF THEY EXIST
-                        if(json.user.grades) {
-                            alert("✅ Welcome back! Loading your saved grades...");
-                            localStorage.setItem('savedGrades', JSON.stringify(json.user.grades));
-                            restoreForm(json.user.grades);
-                        }
-
-                    } else {
-                        alert("❌ Login Failed: " + json.error);
-                    }
-                } catch(e) {
-                    alert("❌ NETWORK ERROR: " + e.message);
-                }
+                await handleAuth('/login', { index_number: index, password: pass }, true, 'loginForm');
             });
         }
 
@@ -305,12 +293,26 @@
             }, false, 'signupForm'); 
         });
 
-        // --- 6. PAGE LOAD & PAYMENT CHECK ---
+        // --- 6. PAGE LOAD (THE FIX IS HERE) ---
         window.addEventListener('load', async () => {
+            
+            // Step A: Check if the user is already remembered in LocalStorage
+            const savedIndex = localStorage.getItem('userIndex');
+            const savedName = localStorage.getItem('userName');
+            
+            if (savedIndex) {
+                // User was logged in! Restore them immediately.
+                currentStudent = { name: savedName, index: savedIndex, hasPaid: 0 }; 
+                updateUI(true); // Show dashboard
+
+                // Attempt to restore their form data if it exists
+                const savedGrades = JSON.parse(localStorage.getItem('savedGrades'));
+                if(savedGrades) restoreForm(savedGrades);
+            }
+
+            // Step B: Check for Paystack Payment Return
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('reference')) {
-                const savedIndex = localStorage.getItem('userIndex');
-                const savedName = localStorage.getItem('userName');
                 if (savedIndex) {
                     currentStudent = { name: savedName, index: savedIndex, hasPaid: 1 };
                     updateUI(true);
@@ -321,7 +323,17 @@
             }
         });
 
-        // --- 7. CALCULATOR BUTTON ---
+        // --- 7. NEW LOGOUT FUNCTION ---
+        function logoutUser() {
+            // 1. Delete the saved data so they are actually logged out
+            localStorage.removeItem('userIndex');
+            localStorage.removeItem('userName');
+            
+            // 2. Refresh the page to return to the login screen
+            location.reload();
+        }
+
+        // --- 8. CALCULATOR BUTTON ---
         document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             saveFormData(); 
@@ -332,7 +344,7 @@
             }
         });
 
-        // --- 8. LOGIC FUNCTIONS ---
+        // --- 9. LOGIC FUNCTIONS ---
         function saveFormData() {
             const getVal = (id) => {
                 const el = document.getElementById(id);
@@ -358,7 +370,6 @@
             
             localStorage.setItem('savedGrades', JSON.stringify(formData));
 
-            // NEW: SAVE TO SERVER IF LOGGED IN
             if(currentStudent.index !== "0000") {
                 fetch('/save-grades', {
                     method: 'POST',

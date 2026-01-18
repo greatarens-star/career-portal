@@ -201,3 +201,48 @@ input:focus, select:focus { outline: none; border-color: var(--primary); backgro
     border-color: var(--primary);
     transform: translateX(-5px); /* Moves slightly left on hover */
 }
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* THE MAGIC CLASS: This hides whatever we don't want to see */
+.hidden {
+    display: none;
+}
+
+nav {
+    margin-bottom: 20px;
+    background: #eee;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+    float: right;
+}
