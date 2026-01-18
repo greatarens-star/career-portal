@@ -198,8 +198,7 @@
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
 
-        // --- 2. SWITCHING SCREENS (UPDATED FOR PERSISTENCE) ---
-        // New helper to handle showing/hiding and SAVING state
+        // --- 2. SWITCHING SCREENS (THE FIX) ---
         function switchView(viewName) {
             // Hide everything first
             document.getElementById('auth-selection').classList.add('hidden');
@@ -257,9 +256,7 @@
                         localStorage.setItem('userName', currentStudent.name);
                         
                         updateUI(true); 
-                        
-                        // Default to dashboard if just logging in
-                        switchView('dashboard');
+                        switchView('dashboard'); // Default after login
 
                         if(json.user.grades) {
                             alert("✅ Welcome back! Loading your saved grades...");
@@ -316,9 +313,19 @@
 
                 // RESTORE THE SPECIFIC PAGE THEY WERE ON
                 const activeView = localStorage.getItem('activeView') || 'dashboard';
-                // Only restore dashboard/results views if logged in
-                if(activeView === 'results' || activeView === 'dashboard') {
-                    switchView(activeView);
+                
+                if(activeView === 'results') {
+                    // IF ON RESULTS, RESTORE THE COURSES FROM MEMORY!
+                    const savedCourses = JSON.parse(localStorage.getItem('fetchedCourses'));
+                    const savedPoints = localStorage.getItem('currentPoints');
+                    
+                    if(savedCourses && savedCourses.length > 0) {
+                        fetchedCourses = savedCourses;
+                        currentPoints = savedPoints;
+                        viewCourses(); // Show the results again
+                    } else {
+                        switchView('dashboard'); // No results found in memory, go to dash
+                    }
                 } else {
                     switchView('dashboard');
                 }
@@ -335,7 +342,7 @@
                 }
             }
 
-            // B. CHECK PAYSTACK
+            // B. CHECK PAYSTACK RETURN
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('reference')) {
                 if (savedIndex) {
@@ -352,7 +359,8 @@
         function logoutUser() {
             localStorage.removeItem('userIndex');
             localStorage.removeItem('userName');
-            localStorage.removeItem('activeView'); // Forget where they were
+            localStorage.removeItem('activeView'); 
+            localStorage.removeItem('fetchedCourses'); // Clear saved courses on logout
             location.reload();
         }
 
@@ -411,7 +419,7 @@
         async function restoreAndCalculate() {
             const saved = JSON.parse(localStorage.getItem('savedGrades'));
             if(!saved) return;
-            // ... (Your existing math logic) ...
+            
             const g = { math:saved.math, eng:saved.eng, kis:saved.kis, bio:saved.bio, phy:saved.phy, chem:saved.chem, hum1:saved.hist, hum2:saved.geo, hum3:saved.cre, tech:saved.tech };
             let allGrades = Object.values(g).sort((a,b)=>b-a);
             let API = 0; 
@@ -427,11 +435,16 @@
             }
             const weightedPoints = Math.sqrt((R/48) * (API/84)) * 48;
             currentPoints = weightedPoints.toFixed(3);
+            localStorage.setItem('currentPoints', currentPoints); // SAVE POINTS
 
             try {
                 const res = await fetch('/recommend', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ points: weightedPoints, category: saved.category, level: saved.level, meanGrade: saved.mean }) });
                 const data = await res.json();
                 fetchedCourses = data.results;
+                
+                // SAVE RESULTS TO MEMORY!
+                localStorage.setItem('fetchedCourses', JSON.stringify(fetchedCourses));
+
                 document.getElementById('modal-points').innerText = currentPoints;
                 document.getElementById('score-modal').classList.remove('hidden');
                 document.querySelector('.primary-btn').innerText = "Calculate & Check"; 
@@ -440,8 +453,7 @@
 
         function viewCourses() {
             document.getElementById('score-modal').classList.add('hidden');
-            // USE SWITCHVIEW TO SAVE LOCATION
-            switchView('results');
+            switchView('results'); // Saves location
             
             const cont = document.getElementById('course-list-container');
             cont.innerHTML = "";
