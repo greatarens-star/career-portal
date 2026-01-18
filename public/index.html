@@ -228,7 +228,7 @@
         function showSignup() { switchView('signup'); }
         function showSelection() { switchView('selection'); }
 
-        // --- 3. AUTH FUNCTION ---
+        // --- 3. AUTH FUNCTION (SAVE PAYMENT STATUS) ---
         const handleAuth = async (url, data, isLogin, hideId) => {
             try {
                 const res = await fetch(url, { 
@@ -252,8 +252,10 @@
                             hasPaid: json.user.hasPaid 
                         };
                         
+                        // SAVE NAME AND PAYMENT STATUS
                         localStorage.setItem('userIndex', currentStudent.index);
                         localStorage.setItem('userName', currentStudent.name);
+                        localStorage.setItem('userHasPaid', currentStudent.hasPaid);
                         
                         updateUI(true); 
                         switchView('dashboard'); // Default after login
@@ -299,16 +301,22 @@
             }, false, 'signupForm'); 
         });
 
-        // --- 5. PAGE LOAD (CRITICAL FIX HERE) ---
+        // --- 5. PAGE LOAD (RESTORE PAYMENT STATUS) ---
         window.addEventListener('load', async () => {
             
             // A. CHECK IF LOGGED IN
             const savedIndex = localStorage.getItem('userIndex');
             const savedName = localStorage.getItem('userName');
+            const savedPaid = localStorage.getItem('userHasPaid'); // Retrieve payment status
             
             if (savedIndex) {
-                // Restore User
-                currentStudent = { name: savedName, index: savedIndex, hasPaid: 0 }; 
+                // Restore User including 'hasPaid' status
+                currentStudent = { 
+                    name: savedName, 
+                    index: savedIndex, 
+                    hasPaid: parseInt(savedPaid) || 0 
+                }; 
+                
                 updateUI(true); 
 
                 // RESTORE THE SPECIFIC PAGE THEY WERE ON
@@ -342,11 +350,15 @@
                 }
             }
 
-            // B. CHECK PAYSTACK RETURN
+            // B. CHECK PAYSTACK RETURN (SAVE NEW PAYMENT)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('reference')) {
                 if (savedIndex) {
                     currentStudent = { name: savedName, index: savedIndex, hasPaid: 1 };
+                    
+                    // UPDATE MEMORY
+                    localStorage.setItem('userHasPaid', '1');
+
                     updateUI(true);
                     await fetch('/verify-payment', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index_number: savedIndex }) });
                     restoreAndCalculate();
@@ -359,8 +371,9 @@
         function logoutUser() {
             localStorage.removeItem('userIndex');
             localStorage.removeItem('userName');
+            localStorage.removeItem('userHasPaid'); // Clear payment memory
             localStorage.removeItem('activeView'); 
-            localStorage.removeItem('fetchedCourses'); // Clear saved courses on logout
+            localStorage.removeItem('fetchedCourses'); 
             location.reload();
         }
 
