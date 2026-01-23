@@ -319,20 +319,21 @@
                 
                 updateUI(true); 
 
-                // RESTORE THE SPECIFIC PAGE THEY WERE ON
+                // ALWAYS RESTORE COURSES IF AVAILABLE
+                const savedCourses = JSON.parse(localStorage.getItem('fetchedCourses'));
+                const savedPoints = localStorage.getItem('currentPoints');
+                if(savedCourses && savedCourses.length > 0) {
+                    fetchedCourses = savedCourses;
+                    currentPoints = savedPoints || 0;
+                }
+
+                // RESTORE VIEW
                 const activeView = localStorage.getItem('activeView') || 'dashboard';
-                
                 if(activeView === 'results') {
-                    // IF ON RESULTS, RESTORE THE COURSES FROM MEMORY!
-                    const savedCourses = JSON.parse(localStorage.getItem('fetchedCourses'));
-                    const savedPoints = localStorage.getItem('currentPoints');
-                    
-                    if(savedCourses && savedCourses.length > 0) {
-                        fetchedCourses = savedCourses;
-                        currentPoints = savedPoints;
-                        viewCourses(); // Show the results again
+                    if(fetchedCourses.length > 0) {
+                        viewCourses(); 
                     } else {
-                        switchView('dashboard'); // No results found in memory, go to dash
+                        switchView('dashboard'); 
                     }
                 } else {
                     switchView('dashboard');
@@ -341,12 +342,12 @@
                 const savedGrades = JSON.parse(localStorage.getItem('savedGrades'));
                 if(savedGrades) restoreForm(savedGrades);
             } else {
-                // NOT LOGGED IN? Check if they were on Login/Signup forms
+                // NOT LOGGED IN?
                 const activeView = localStorage.getItem('activeView');
                 if(activeView === 'login' || activeView === 'signup') {
                     switchView(activeView);
                 } else {
-                    switchView('selection'); // Default to buttons
+                    switchView('selection'); 
                 }
             }
 
@@ -476,10 +477,45 @@
         }
         
         function closeModal(){ document.getElementById('score-modal').classList.add('hidden'); }
+        
+        // --- 9. PDF DOWNLOAD (FIXED BLANK ISSUE) ---
         function downloadPDF() {
+            // Check if data is ready
+            if(!fetchedCourses || fetchedCourses.length === 0) {
+                alert("Please calculate your points first!");
+                return;
+            }
+
+            // Fill data
+            const level = document.getElementById('education-level').value.toUpperCase();
+            const categorySelect = document.getElementById('career-field');
+            const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
+            
+            document.getElementById('pdf-name').innerText = currentStudent.name || "Student";
+            document.getElementById('pdf-index').innerText = currentStudent.index || "0000";
+            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('pdf-level').innerText = level;
+            document.getElementById('pdf-field').innerText = categoryName;
+            document.getElementById('pdf-points').innerText = currentPoints;
+            
+            const tbody = document.getElementById('pdf-course-list');
+            tbody.innerHTML = "";
+            fetchedCourses.slice(0, 15).forEach(c => {
+                tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
+            });
+
+            // Show template momentarily to capture it
             const element = document.getElementById('pdf-template');
             element.style.display = 'block'; 
-            html2pdf().from(element).save().then(() => { element.style.display = 'none'; });
+
+            // Use timeout to ensure DOM updates before capture
+            setTimeout(() => {
+                html2pdf()
+                    .set({ margin:10, filename:`Career_Report_${currentStudent.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} })
+                    .from(element)
+                    .save()
+                    .then(() => { element.style.display = 'none'; });
+            }, 500);
         }
     </script>
 </body>
