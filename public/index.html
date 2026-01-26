@@ -187,294 +187,196 @@
         </div>
     </div>
 
-    <script>
-        // --- 1. GLOBALS & SETUP ---
-        let fetchedCourses = [];
-        let currentStudent = { name: "Student", index: "0000", hasPaid: 0 }; 
-        let currentPoints = 0;
+   // --- 1. GLOBALS & SETUP ---
+let fetchedCourses = [];
+let currentUser = { name: "Guest", index: "N/A", hasPaid: 0 }; 
+let currentScore = 0;
+let currentCategory = "";
 
-        const gradeList = [{val:12,txt:"A"},{val:11,txt:"A-"},{val:10,txt:"B+"},{val:9,txt:"B"},{val:8,txt:"B-"},{val:7,txt:"C+"},{val:6,txt:"C"},{val:5,txt:"C-"},{val:4,txt:"D+"},{val:3,txt:"D"},{val:2,txt:"D-"},{val:1,txt:"E"},{val:0,txt:"Not Taken"}];
-        document.querySelectorAll('.grade-select').forEach(s => gradeList.forEach(g => { let o=document.createElement('option'); o.value=g.val; o.innerText=g.txt; if(g.val===0)o.selected=true; s.appendChild(o); }));
-        const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
-        techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
-
-        // --- 2. SWITCHING SCREENS ---
-        function switchView(viewName) {
-            document.getElementById('auth-selection').classList.add('hidden');
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('signupForm').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.add('hidden');
-            document.getElementById('results-page').classList.add('hidden');
-
-            if (viewName === 'login') document.getElementById('loginForm').classList.remove('hidden');
-            else if (viewName === 'signup') document.getElementById('signupForm').classList.remove('hidden');
-            else if (viewName === 'selection') document.getElementById('auth-selection').classList.remove('hidden');
-            else if (viewName === 'dashboard') document.getElementById('dashboard-section').classList.remove('hidden');
-            else if (viewName === 'results') document.getElementById('results-page').classList.remove('hidden');
-
-            localStorage.setItem('activeView', viewName);
-        }
-
-        function showLogin() { switchView('login'); }
-        function showSignup() { switchView('signup'); }
-        function showSelection() { switchView('selection'); }
-
-        // --- 3. AUTH FUNCTION ---
-        const handleAuth = async (url, data, isLogin, hideId) => {
-            try {
-                const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-                const json = await res.json();
-                
-                if(res.ok) {
-                    if(!isLogin) { 
-                        alert("Account Created Successfully! ✅\nPlease Login now."); 
-                        showLogin(); 
-                        document.getElementById('signup-index').value = '';
-                        document.getElementById('signup-name').value = '';
-                        document.getElementById('signup-pass').value = '';
-                    } else {
-                        currentStudent = { name: json.user.name, index: json.user.index, hasPaid: json.user.hasPaid };
-                        localStorage.setItem('userIndex', currentStudent.index);
-                        localStorage.setItem('userName', currentStudent.name);
-                        localStorage.setItem('userHasPaid', currentStudent.hasPaid);
-                        
-                        updateUI(true); 
-                        switchView('dashboard'); 
-                        if(json.user.grades) {
-                            alert("✅ Welcome back! Loading your saved grades...");
-                            localStorage.setItem('savedGrades', JSON.stringify(json.user.grades));
-                            restoreForm(json.user.grades);
-                        }
-                    }
-                } else { alert(json.error); }
-            } catch(e) { console.error(e); alert("Server Connection Error."); }
-        };
-
-        function updateUI(isLoggedIn) {
-            if(isLoggedIn) {
-                document.getElementById('nav-username').innerText = currentStudent.name;
-                document.getElementById('landing-page').classList.add('hidden');
-                document.getElementById('app-interface').classList.remove('hidden');
-                if(currentStudent.hasPaid === 1) {
-                    document.getElementById('nav-username').innerHTML += " <span style='background:#27ae60; padding:2px 8px; border-radius:10px; font-size:0.8rem;'>PAID ✅</span>";
-                }
-            }
-        }
-
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault(); 
-                const index = document.getElementById('login-index').value;
-                const pass = document.getElementById('login-pass').value;
-                await handleAuth('/login', { index_number: index, password: pass }, true, 'loginForm');
-            });
-        }
-
-        document.getElementById('signupForm').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            handleAuth('/signup', {
-                index_number: document.getElementById('signup-index').value, 
-                full_name: document.getElementById('signup-name').value, 
-                password: document.getElementById('signup-pass').value
-            }, false, 'signupForm'); 
+// --- 2. POPULATE DROPDOWNS ON LOAD ---
+window.addEventListener('load', () => {
+    // Fill Grade Dropdowns
+    const gradeList = [{val:12,txt:"A"},{val:11,txt:"A-"},{val:10,txt:"B+"},{val:9,txt:"B"},{val:8,txt:"B-"},{val:7,txt:"C+"},{val:6,txt:"C"},{val:5,txt:"C-"},{val:4,txt:"D+"},{val:3,txt:"D"},{val:2,txt:"D-"},{val:1,txt:"E"},{val:0,txt:"Not Taken"}];
+    document.querySelectorAll('.grade-select').forEach(s => {
+        // Clear existing to prevent duplicates
+        s.innerHTML = '';
+        gradeList.forEach(g => { 
+            let o = document.createElement('option'); 
+            o.value = g.val; 
+            o.innerText = g.txt; 
+            if(g.val===0) o.selected=true; 
+            s.appendChild(o); 
         });
+    });
 
-        // --- 5. PAGE LOAD ---
-        window.addEventListener('load', async () => {
-            const savedIndex = localStorage.getItem('userIndex');
-            const savedName = localStorage.getItem('userName');
-            const savedPaid = localStorage.getItem('userHasPaid'); 
-            
-            if (savedIndex) {
-                currentStudent = { name: savedName, index: savedIndex, hasPaid: parseInt(savedPaid) || 0 }; 
-                updateUI(true); 
-
-                const savedCourses = JSON.parse(localStorage.getItem('fetchedCourses'));
-                const savedPoints = localStorage.getItem('currentPoints');
-                if(savedCourses && savedCourses.length > 0) {
-                    fetchedCourses = savedCourses;
-                    currentPoints = savedPoints || 0;
-                }
-
-                const activeView = localStorage.getItem('activeView') || 'dashboard';
-                if(activeView === 'results') {
-                    if(fetchedCourses.length > 0) viewCourses(); 
-                    else switchView('dashboard'); 
-                } else { switchView('dashboard'); }
-
-                const savedGrades = JSON.parse(localStorage.getItem('savedGrades'));
-                if(savedGrades) restoreForm(savedGrades);
-            } else {
-                const activeView = localStorage.getItem('activeView');
-                if(activeView === 'login' || activeView === 'signup') switchView(activeView);
-                else switchView('selection'); 
-            }
+    // Fill Technical Subjects
+    const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
+    const techDropdown = document.getElementById('tech-subject-name');
+    if(techDropdown) {
+        techDropdown.innerHTML = ''; // Clear first
+        techSubjects.sort();
+        techSubjects.forEach(s => { 
+            let o = document.createElement('option'); 
+            o.value = s; 
+            o.innerText = s; 
+            techDropdown.appendChild(o); 
         });
+    }
+});
 
-        function logoutUser() {
-            localStorage.removeItem('userIndex');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userHasPaid'); 
-            localStorage.removeItem('activeView'); 
-            localStorage.removeItem('fetchedCourses'); 
-            location.reload();
-        }
+// --- 3. NAVIGATION ---
+function switchView(viewName) {
+    document.getElementById('auth-selection').classList.add('hidden');
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('signupForm').classList.add('hidden');
+    document.getElementById('dashboard-section').classList.add('hidden');
+    document.getElementById('results-page').classList.add('hidden');
 
-        // --- 7. CALCULATOR BUTTON ---
-        document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            saveFormData(); 
-            if (currentStudent.hasPaid === 1) {
-                restoreAndCalculate();
-            } else {
-                initiatePayment();
-            }
-        });
+    if (viewName === 'login') document.getElementById('loginForm').classList.remove('hidden');
+    else if (viewName === 'signup') document.getElementById('signupForm').classList.remove('hidden');
+    else if (viewName === 'selection') document.getElementById('auth-selection').classList.remove('hidden');
+    else if (viewName === 'dashboard') document.getElementById('dashboard-section').classList.remove('hidden');
+    else if (viewName === 'results') document.getElementById('results-page').classList.remove('hidden');
+}
 
-        // --- 8. LOGIC FUNCTIONS ---
-        function saveFormData() {
-            const getVal = (id) => { const el = document.getElementById(id); return el ? parseInt(el.value) || 0 : 0; };
-            const formData = {
-                level: document.getElementById('education-level').value,
-                mean: document.getElementById('mean-grade').value,
-                category: document.getElementById('career-field').value,
-                math: getVal('math'), eng: getVal('eng'), kis: getVal('kis'),
-                bio: getVal('bio'), phy: getVal('phy'), chem: getVal('chem'),
-                hist: getVal('hist'), geo: getVal('geo'), cre: getVal('cre'),
-                tech: getVal('tech-subject-grade'), techName: document.getElementById('tech-subject-name').value 
-            };
-            localStorage.setItem('savedGrades', JSON.stringify(formData));
-            if(currentStudent.index !== "0000") {
-                fetch('/save-grades', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index_number: currentStudent.index, grades: formData }) });
-            }
-        }
+function showLogin() { switchView('login'); }
+function showSignup() { switchView('signup'); }
+function showSelection() { switchView('selection'); }
+function closeModal() { document.getElementById('score-modal').classList.add('hidden'); }
+function logoutUser() { location.reload(); }
 
-        function restoreForm(data) {
-            if(!data) return;
-            try {
-                document.getElementById('education-level').value = data.level;
-                document.getElementById('mean-grade').value = data.mean;
-                document.getElementById('career-field').value = data.category;
-                const subjects = ['math','eng','kis','bio','phy','chem','hist','geo','cre'];
-                subjects.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = data[id]; });
-                if(data.tech) document.getElementById('tech-subject-grade').value = data.tech;
-                if(data.techName) document.getElementById('tech-subject-name').value = data.techName;
-            } catch(e) { console.log("Error restoring form", e); }
-        }
-
-        // ===========================================
-        // ⚠️ PAYSTACK PAYMENT FUNCTION (LIVE MODE)
-        // ===========================================
-        function initiatePayment() {
-            const btn = document.querySelector('.primary-btn');
-            btn.innerText = "Processing Payment...";
-
-            const paystack = new PaystackPop();
-            paystack.newTransaction({
-                
-                // 👇 PASTE YOUR LIVE KEY HERE 👇
-                key: 'sk_live_7eff5d6b4bc67c0a8df4ed179cae6b6d542707fa', 
-                
-                email: currentStudent.index + "@student.ke", 
-                amount: 10 * 100, // KES 50.00
-                currency: 'KES',
-                
-                onSuccess: (transaction) => {
-                    console.log("Payment complete:", transaction);
-                    currentStudent.hasPaid = 1;
-                    localStorage.setItem('userHasPaid', '1');
-                    
-                    updateUI(true);
-                    restoreAndCalculate();
-                    alert("Payment Successful! ✅\nYou can now download your report.");
-                },
-                
-                onCancel: () => {
-                    alert("Payment cancelled.");
-                    btn.innerText = "Calculate & Check";
-                }
-            });
-        }
-
-        async function restoreAndCalculate() {
-            const saved = JSON.parse(localStorage.getItem('savedGrades'));
-            if(!saved) return;
-            
-            const g = { math:saved.math, eng:saved.eng, kis:saved.kis, bio:saved.bio, phy:saved.phy, chem:saved.chem, hum1:saved.hist, hum2:saved.geo, hum3:saved.cre, tech:saved.tech };
-            let allGrades = Object.values(g).sort((a,b)=>b-a);
-            let API = 0; 
-            for(let i=0; i<7; i++) API += allGrades[i]; 
-            const bestHum = Math.max(g.hum1, g.hum2, g.hum3);
-            const bestSci = Math.max(g.bio, g.phy, g.chem);
-            let R = 0;
-            switch(saved.category){
-                case 'eng': R = g.math + g.phy + g.chem + g.eng; break;
-                case 'med': R = g.bio + g.chem + g.math + g.eng; break;
-                case 'law': R = g.eng + g.kis + g.math + Math.max(g.hum1, bestHum); break;
-                default: R = g.math + g.eng + bestHum + bestSci; 
-            }
-            const weightedPoints = Math.sqrt((R/48) * (API/84)) * 48;
-            currentPoints = weightedPoints.toFixed(3);
-            localStorage.setItem('currentPoints', currentPoints); 
-
-            try {
-                const res = await fetch('/recommend', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ points: weightedPoints, category: saved.category, level: saved.level, meanGrade: saved.mean }) });
-                const data = await res.json();
-                fetchedCourses = data.results;
-                localStorage.setItem('fetchedCourses', JSON.stringify(fetchedCourses));
-
-                document.getElementById('modal-points').innerText = currentPoints;
-                document.getElementById('score-modal').classList.remove('hidden');
-                document.querySelector('.primary-btn').innerText = "Calculate & Check"; 
-            } catch(e) { console.log(e); }
-        }
-
-        function viewCourses() {
-            document.getElementById('score-modal').classList.add('hidden');
-            switchView('results'); 
-            const cont = document.getElementById('course-list-container');
-            cont.innerHTML = "";
-            if(fetchedCourses && fetchedCourses.length > 0) {
-                fetchedCourses.forEach(c => { cont.innerHTML += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | ${c.cutoff ? 'Cutoff: '+c.cutoff : 'Diploma'}</p></div>`; });
-            } else { cont.innerHTML = "<p style='text-align:center; padding:20px;'>No matching courses found.</p>"; }
-        }
+// --- 4. LOGIN & SIGNUP ---
+const handleAuth = async (url, data, isLogin) => {
+    try {
+        const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+        const json = await res.json();
         
-        function closeModal(){ document.getElementById('score-modal').classList.add('hidden'); }
-        
-        function downloadPDF() {
-            if(!fetchedCourses || fetchedCourses.length === 0) {
-                alert("Please calculate your points first!");
-                return;
+        if(res.ok) {
+            if(!isLogin) { 
+                alert("Account Created! Please Login."); 
+                showLogin(); 
+            } else {
+                currentUser = { name: json.user.name, index: json.user.index, hasPaid: json.user.hasPaid || 0 };
+                document.getElementById('nav-username').innerText = currentUser.name;
+                switchView('dashboard'); 
             }
-            const level = document.getElementById('education-level').value.toUpperCase();
-            const categorySelect = document.getElementById('career-field');
-            const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
-            
-            document.getElementById('pdf-name').innerText = currentStudent.name || "Student";
-            document.getElementById('pdf-index').innerText = currentStudent.index || "0000";
-            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
-            document.getElementById('pdf-level').innerText = level;
-            document.getElementById('pdf-field').innerText = categoryName;
-            document.getElementById('pdf-points').innerText = currentPoints;
-            
-            const tbody = document.getElementById('pdf-course-list');
-            tbody.innerHTML = "";
-            fetchedCourses.slice(0, 15).forEach(c => {
-                tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
-            });
+        } else { alert(json.error); }
+    } catch(e) { console.error(e); alert("Connection Error"); }
+};
 
-            const element = document.getElementById('pdf-template');
-            element.style.display = 'block'; 
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault(); 
+    handleAuth('/login', { index_number: document.getElementById('login-index').value, password: document.getElementById('login-pass').value }, true);
+});
 
-            setTimeout(() => {
-                html2pdf()
-                    .set({ margin:10, filename:`Career_Report_${currentStudent.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} })
-                    .from(element)
-                    .save()
-                    .then(() => { element.style.display = 'none'; });
-            }, 500);
+document.getElementById('signupForm').addEventListener('submit', (e) => { 
+    e.preventDefault(); 
+    handleAuth('/signup', { index_number: document.getElementById('signup-index').value, full_name: document.getElementById('signup-name').value, password: document.getElementById('signup-pass').value }, false); 
+});
+
+// --- 5. CALCULATOR LOGIC (CORRECTED IDs) ---
+document.getElementById('calculatorForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    function getVal(id) { const el = document.getElementById(id); return el ? Number(el.value) : 0; }
+    
+    // MATCHING YOUR HTML IDs EXACTLY:
+    const grades = {
+        math: getVal('math'), eng: getVal('eng'), kis: getVal('kis'),
+        bio: getVal('bio'), phy: getVal('phy'), chem: getVal('chem'),
+        hum1: getVal('hist'), hum2: getVal('geo'), hum3: getVal('cre'),
+        tech: getVal('tech-subject-grade')
+    };
+
+    currentCategory = document.getElementById('career-field').value;
+    
+    // Logic
+    const bestHum = Math.max(grades.hum1, grades.hum2, grades.hum3);
+    const bestSci = Math.max(grades.bio, grades.phy, grades.chem);
+    
+    // Simple Aggregate
+    let allArr = Object.values(grades).sort((a,b) => b-a);
+    let api = 0; 
+    for(let i=0; i<7; i++) api += allArr[i];
+
+    // Cluster Formula
+    let r = 0;
+    const g = grades;
+    if(currentCategory === 'eng') r = g.math + g.phy + g.chem + g.eng;
+    else if(currentCategory === 'med') r = g.bio + g.chem + g.math + g.eng;
+    else r = g.math + g.eng + bestHum + bestSci; // Default
+
+    const w = Math.sqrt((r / 48) * (api / 84)) * 48;
+    currentScore = w; 
+
+    // SHOW POPUP (Using 'modal-points' which matches your HTML)
+    document.getElementById('modal-points').innerText = w.toFixed(3);
+    document.getElementById('score-modal').classList.remove('hidden');
+    
+    // UPDATE PAYMENT BUTTON
+    const btn = document.querySelector('#score-modal .primary-btn');
+    if(currentUser.hasPaid === 1) {
+         btn.innerText = "👉 See Courses (Paid ✅)";
+         btn.onclick = viewDetailedResults;
+    } else {
+         btn.innerText = "👉 Unlock Results (KES 50)";
+         btn.onclick = initiatePayment;
+    }
+});
+
+// --- 6. PAYSTACK PAYMENT (LIVE) ---
+function initiatePayment() {
+    const btn = document.querySelector('#score-modal .primary-btn');
+    btn.innerText = "Processing...";
+
+    const handler = PaystackPop.setup({
+        // 👇 PASTE YOUR LIVE KEY HERE 👇
+        key: 'pk_live_ac6db2084515b397b98e77ca6a46f8c08d83c593', 
+        
+        email: currentUser.index + "@student.ke",
+        amount: 50 * 100, // KES 50
+        currency: 'KES',
+        callback: function(response) {
+            currentUser.hasPaid = 1;
+            alert("Payment Successful! ✅");
+            viewDetailedResults();
+        },
+        onClose: function() {
+            alert("Payment cancelled.");
+            btn.innerText = "👉 Unlock Results (KES 50)";
         }
-    </script>
+    });
+    handler.openIframe();
+}
+
+// --- 7. VIEW RESULTS ---
+async function viewDetailedResults() {
+    document.getElementById('score-modal').classList.add('hidden');
+    switchView('results');
+    
+    const container = document.getElementById('course-list-container');
+    container.innerHTML = '<p>Loading official courses...</p>';
+
+    try {
+        const response = await fetch('/recommend', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ points: currentScore, category: currentCategory })
+        });
+        const data = await response.json();
+
+        let html = "";
+        if (data.results && data.results.length > 0) {
+            data.results.forEach(c => {
+                html += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | Cutoff: ${c.cutoff}</p></div>`;
+            });
+        } else {
+            html = "<p style='padding:20px; text-align:center;'>No matching courses found.</p>";
+        }
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = "<p>Error loading results.</p>";
+    }
+}
 </body>
 </html>
