@@ -80,7 +80,7 @@
             <h2 id="modal-title" style="color:#003366; margin:10px 0;">Calculation Complete!</h2>
             <p id="modal-subtitle" style="font-size:1.1rem;">Your Weighted Cluster Points:</p>
             <h1 id="modal-points" style="font-size:2.5rem; color:#27ae60; margin:10px 0;">0.000</h1>
-            <button onclick="viewCourses()" class="btn primary-btn" style="margin-top:20px;">👉 See Courses I Qualify For</button>
+            <button class="btn primary-btn" style="margin-top:20px;">👉 Unlock Results (KES 50)</button>
             <button onclick="closeModal()" style="margin-top:10px; background:transparent; border:none; color:#999; cursor:pointer;">Close</button>
         </div>
     </div>
@@ -187,196 +187,232 @@
         </div>
     </div>
 
-   // --- 1. GLOBALS & SETUP ---
-let fetchedCourses = [];
-let currentUser = { name: "Guest", index: "N/A", hasPaid: 0 }; 
-let currentScore = 0;
-let currentCategory = "";
+    <script>
+        // --- 1. GLOBALS & SETUP ---
+        let fetchedCourses = [];
+        let currentUser = { name: "Guest", index: "N/A", hasPaid: 0 }; 
+        let currentScore = 0;
+        let currentCategory = "";
 
-// --- 2. POPULATE DROPDOWNS ON LOAD ---
-window.addEventListener('load', () => {
-    // Fill Grade Dropdowns
-    const gradeList = [{val:12,txt:"A"},{val:11,txt:"A-"},{val:10,txt:"B+"},{val:9,txt:"B"},{val:8,txt:"B-"},{val:7,txt:"C+"},{val:6,txt:"C"},{val:5,txt:"C-"},{val:4,txt:"D+"},{val:3,txt:"D"},{val:2,txt:"D-"},{val:1,txt:"E"},{val:0,txt:"Not Taken"}];
-    document.querySelectorAll('.grade-select').forEach(s => {
-        // Clear existing to prevent duplicates
-        s.innerHTML = '';
-        gradeList.forEach(g => { 
-            let o = document.createElement('option'); 
-            o.value = g.val; 
-            o.innerText = g.txt; 
-            if(g.val===0) o.selected=true; 
-            s.appendChild(o); 
-        });
-    });
-
-    // Fill Technical Subjects
-    const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
-    const techDropdown = document.getElementById('tech-subject-name');
-    if(techDropdown) {
-        techDropdown.innerHTML = ''; // Clear first
-        techSubjects.sort();
-        techSubjects.forEach(s => { 
-            let o = document.createElement('option'); 
-            o.value = s; 
-            o.innerText = s; 
-            techDropdown.appendChild(o); 
-        });
-    }
-});
-
-// --- 3. NAVIGATION ---
-function switchView(viewName) {
-    document.getElementById('auth-selection').classList.add('hidden');
-    document.getElementById('loginForm').classList.add('hidden');
-    document.getElementById('signupForm').classList.add('hidden');
-    document.getElementById('dashboard-section').classList.add('hidden');
-    document.getElementById('results-page').classList.add('hidden');
-
-    if (viewName === 'login') document.getElementById('loginForm').classList.remove('hidden');
-    else if (viewName === 'signup') document.getElementById('signupForm').classList.remove('hidden');
-    else if (viewName === 'selection') document.getElementById('auth-selection').classList.remove('hidden');
-    else if (viewName === 'dashboard') document.getElementById('dashboard-section').classList.remove('hidden');
-    else if (viewName === 'results') document.getElementById('results-page').classList.remove('hidden');
-}
-
-function showLogin() { switchView('login'); }
-function showSignup() { switchView('signup'); }
-function showSelection() { switchView('selection'); }
-function closeModal() { document.getElementById('score-modal').classList.add('hidden'); }
-function logoutUser() { location.reload(); }
-
-// --- 4. LOGIN & SIGNUP ---
-const handleAuth = async (url, data, isLogin) => {
-    try {
-        const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-        const json = await res.json();
-        
-        if(res.ok) {
-            if(!isLogin) { 
-                alert("Account Created! Please Login."); 
-                showLogin(); 
-            } else {
-                currentUser = { name: json.user.name, index: json.user.index, hasPaid: json.user.hasPaid || 0 };
-                document.getElementById('nav-username').innerText = currentUser.name;
-                switchView('dashboard'); 
-            }
-        } else { alert(json.error); }
-    } catch(e) { console.error(e); alert("Connection Error"); }
-};
-
-document.getElementById('loginForm').addEventListener('submit', (e) => {
-    e.preventDefault(); 
-    handleAuth('/login', { index_number: document.getElementById('login-index').value, password: document.getElementById('login-pass').value }, true);
-});
-
-document.getElementById('signupForm').addEventListener('submit', (e) => { 
-    e.preventDefault(); 
-    handleAuth('/signup', { index_number: document.getElementById('signup-index').value, full_name: document.getElementById('signup-name').value, password: document.getElementById('signup-pass').value }, false); 
-});
-
-// --- 5. CALCULATOR LOGIC (CORRECTED IDs) ---
-document.getElementById('calculatorForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    function getVal(id) { const el = document.getElementById(id); return el ? Number(el.value) : 0; }
-    
-    // MATCHING YOUR HTML IDs EXACTLY:
-    const grades = {
-        math: getVal('math'), eng: getVal('eng'), kis: getVal('kis'),
-        bio: getVal('bio'), phy: getVal('phy'), chem: getVal('chem'),
-        hum1: getVal('hist'), hum2: getVal('geo'), hum3: getVal('cre'),
-        tech: getVal('tech-subject-grade')
-    };
-
-    currentCategory = document.getElementById('career-field').value;
-    
-    // Logic
-    const bestHum = Math.max(grades.hum1, grades.hum2, grades.hum3);
-    const bestSci = Math.max(grades.bio, grades.phy, grades.chem);
-    
-    // Simple Aggregate
-    let allArr = Object.values(grades).sort((a,b) => b-a);
-    let api = 0; 
-    for(let i=0; i<7; i++) api += allArr[i];
-
-    // Cluster Formula
-    let r = 0;
-    const g = grades;
-    if(currentCategory === 'eng') r = g.math + g.phy + g.chem + g.eng;
-    else if(currentCategory === 'med') r = g.bio + g.chem + g.math + g.eng;
-    else r = g.math + g.eng + bestHum + bestSci; // Default
-
-    const w = Math.sqrt((r / 48) * (api / 84)) * 48;
-    currentScore = w; 
-
-    // SHOW POPUP (Using 'modal-points' which matches your HTML)
-    document.getElementById('modal-points').innerText = w.toFixed(3);
-    document.getElementById('score-modal').classList.remove('hidden');
-    
-    // UPDATE PAYMENT BUTTON
-    const btn = document.querySelector('#score-modal .primary-btn');
-    if(currentUser.hasPaid === 1) {
-         btn.innerText = "👉 See Courses (Paid ✅)";
-         btn.onclick = viewDetailedResults;
-    } else {
-         btn.innerText = "👉 Unlock Results (KES 50)";
-         btn.onclick = initiatePayment;
-    }
-});
-
-// --- 6. PAYSTACK PAYMENT (LIVE) ---
-function initiatePayment() {
-    const btn = document.querySelector('#score-modal .primary-btn');
-    btn.innerText = "Processing...";
-
-    const handler = PaystackPop.setup({
-        // 👇 PASTE YOUR LIVE KEY HERE 👇
-        key: 'pk_live_ac6db2084515b397b98e77ca6a46f8c08d83c593', 
-        
-        email: currentUser.index + "@student.ke",
-        amount: 50 * 100, // KES 50
-        currency: 'KES',
-        callback: function(response) {
-            currentUser.hasPaid = 1;
-            alert("Payment Successful! ✅");
-            viewDetailedResults();
-        },
-        onClose: function() {
-            alert("Payment cancelled.");
-            btn.innerText = "👉 Unlock Results (KES 50)";
-        }
-    });
-    handler.openIframe();
-}
-
-// --- 7. VIEW RESULTS ---
-async function viewDetailedResults() {
-    document.getElementById('score-modal').classList.add('hidden');
-    switchView('results');
-    
-    const container = document.getElementById('course-list-container');
-    container.innerHTML = '<p>Loading official courses...</p>';
-
-    try {
-        const response = await fetch('/recommend', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ points: currentScore, category: currentCategory })
-        });
-        const data = await response.json();
-
-        let html = "";
-        if (data.results && data.results.length > 0) {
-            data.results.forEach(c => {
-                html += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | Cutoff: ${c.cutoff}</p></div>`;
+        // --- 2. POPULATE DROPDOWNS ON LOAD ---
+        window.addEventListener('load', () => {
+            const gradeList = [{val:12,txt:"A"},{val:11,txt:"A-"},{val:10,txt:"B+"},{val:9,txt:"B"},{val:8,txt:"B-"},{val:7,txt:"C+"},{val:6,txt:"C"},{val:5,txt:"C-"},{val:4,txt:"D+"},{val:3,txt:"D"},{val:2,txt:"D-"},{val:1,txt:"E"},{val:0,txt:"Not Taken"}];
+            
+            document.querySelectorAll('.grade-select').forEach(s => {
+                s.innerHTML = ''; 
+                gradeList.forEach(g => { 
+                    let o = document.createElement('option'); 
+                    o.value = g.val; 
+                    o.innerText = g.txt; 
+                    if(g.val===0) o.selected=true; 
+                    s.appendChild(o); 
+                });
             });
-        } else {
-            html = "<p style='padding:20px; text-align:center;'>No matching courses found.</p>";
+
+            const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
+            const techDropdown = document.getElementById('tech-subject-name');
+            if(techDropdown) {
+                techDropdown.innerHTML = ''; 
+                techSubjects.sort();
+                techSubjects.forEach(s => { 
+                    let o = document.createElement('option'); 
+                    o.value = s; 
+                    o.innerText = s; 
+                    techDropdown.appendChild(o); 
+                });
+            }
+        });
+
+        // --- 3. NAVIGATION ---
+        function switchView(viewName) {
+            document.getElementById('auth-selection').classList.add('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('results-page').classList.add('hidden');
+
+            if (viewName === 'login') document.getElementById('loginForm').classList.remove('hidden');
+            else if (viewName === 'signup') document.getElementById('signupForm').classList.remove('hidden');
+            else if (viewName === 'selection') document.getElementById('auth-selection').classList.remove('hidden');
+            else if (viewName === 'dashboard') document.getElementById('dashboard-section').classList.remove('hidden');
+            else if (viewName === 'results') document.getElementById('results-page').classList.remove('hidden');
         }
-        container.innerHTML = html;
-    } catch (e) {
-        container.innerHTML = "<p>Error loading results.</p>";
-    }
-}
+
+        function showLogin() { switchView('login'); }
+        function showSignup() { switchView('signup'); }
+        function showSelection() { switchView('selection'); }
+        function closeModal() { document.getElementById('score-modal').classList.add('hidden'); }
+        function logoutUser() { location.reload(); }
+
+        // --- 4. AUTH HANDLERS ---
+        const handleAuth = async (url, data, isLogin) => {
+            try {
+                const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+                const json = await res.json();
+                
+                if(res.ok) {
+                    if(!isLogin) { 
+                        alert("Account Created! Please Login."); 
+                        showLogin(); 
+                    } else {
+                        currentUser = { name: json.user.name, index: json.user.index, hasPaid: json.user.hasPaid || 0 };
+                        document.getElementById('nav-username').innerText = currentUser.name;
+                        switchView('dashboard'); 
+                    }
+                } else { alert(json.error); }
+            } catch(e) { console.error(e); alert("Connection Error"); }
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            handleAuth('/login', { index_number: document.getElementById('login-index').value, password: document.getElementById('login-pass').value }, true);
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', (e) => { 
+            e.preventDefault(); 
+            handleAuth('/signup', { index_number: document.getElementById('signup-index').value, full_name: document.getElementById('signup-name').value, password: document.getElementById('signup-pass').value }, false); 
+        });
+
+        // --- 5. CALCULATOR LOGIC ---
+        document.getElementById('calculatorForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            function getVal(id) { const el = document.getElementById(id); return el ? Number(el.value) : 0; }
+            
+            // Correct IDs from your HTML
+            const grades = {
+                math: getVal('math'), eng: getVal('eng'), kis: getVal('kis'),
+                bio: getVal('bio'), phy: getVal('phy'), chem: getVal('chem'),
+                hum1: getVal('hist'), hum2: getVal('geo'), hum3: getVal('cre'),
+                tech: getVal('tech-subject-grade')
+            };
+
+            currentCategory = document.getElementById('career-field').value;
+            
+            // Calc Logic
+            const bestHum = Math.max(grades.hum1, grades.hum2, grades.hum3);
+            const bestSci = Math.max(grades.bio, grades.phy, grades.chem);
+            
+            let allArr = Object.values(grades).sort((a,b) => b-a);
+            let api = 0; 
+            for(let i=0; i<7; i++) api += allArr[i];
+
+            let r = 0;
+            const g = grades;
+            if(currentCategory === 'eng') r = g.math + g.phy + g.chem + g.eng;
+            else if(currentCategory === 'med') r = g.bio + g.chem + g.math + g.eng;
+            else r = g.math + g.eng + bestHum + bestSci; 
+
+            const w = Math.sqrt((r / 48) * (api / 84)) * 48;
+            currentScore = w; 
+
+            // Update Modal
+            document.getElementById('modal-points').innerText = w.toFixed(3);
+            document.getElementById('score-modal').classList.remove('hidden');
+            
+            // Update Button Status
+            const btn = document.querySelector('#score-modal .primary-btn');
+            if(currentUser.hasPaid === 1) {
+                 btn.innerText = "👉 See Courses (Paid ✅)";
+                 btn.onclick = viewDetailedResults;
+            } else {
+                 btn.innerText = "👉 Unlock Results (KES 50)";
+                 btn.onclick = initiatePayment;
+            }
+        });
+
+        // --- 6. PAYSTACK PAYMENT (FIXED FOR CONSTRUCTOR ERROR) ---
+        function initiatePayment() {
+            const btn = document.querySelector('#score-modal .primary-btn');
+            btn.innerText = "Processing...";
+
+            // Using .setup() because we loaded v1/inline.js
+            const handler = PaystackPop.setup({
+                
+                // 👇 REPLACE THIS WITH YOUR REAL LIVE KEY 👇
+                key: 'pk_live_ac6db2084515b397b98e77ca6a46f8c08d83c593', 
+                
+                email: currentUser.index + "@student.ke",
+                amount: 50 * 100, // KES 50
+                currency: 'KES',
+                callback: function(response) {
+                    currentUser.hasPaid = 1;
+                    alert("Payment Successful! ✅");
+                    viewDetailedResults();
+                },
+                onClose: function() {
+                    alert("Payment cancelled.");
+                    btn.innerText = "👉 Unlock Results (KES 50)";
+                }
+            });
+            handler.openIframe();
+        }
+
+        // --- 7. VIEW RESULTS & PDF ---
+        async function viewDetailedResults() {
+            document.getElementById('score-modal').classList.add('hidden');
+            switchView('results');
+            
+            const container = document.getElementById('course-list-container');
+            container.innerHTML = '<p style="text-align:center;">Loading official courses...</p>';
+
+            try {
+                const response = await fetch('/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ points: currentScore, category: currentCategory })
+                });
+                const data = await response.json();
+                
+                fetchedCourses = data.results || [];
+
+                let html = "";
+                if (fetchedCourses.length > 0) {
+                    fetchedCourses.forEach(c => {
+                        html += `<div class="course-card"><h4>${c.name}</h4><p>${c.school} | Cutoff: ${c.cutoff}</p></div>`;
+                    });
+                } else {
+                    html = "<p style='padding:20px; text-align:center;'>No matching courses found.</p>";
+                }
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = "<p>Error loading results.</p>";
+            }
+        }
+
+        function downloadPDF() {
+            if(!fetchedCourses || fetchedCourses.length === 0) {
+                alert("Please calculate your points first!");
+                return;
+            }
+            const level = document.getElementById('education-level').value.toUpperCase();
+            const categorySelect = document.getElementById('career-field');
+            const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
+            
+            document.getElementById('pdf-name').innerText = currentUser.name || "Student";
+            document.getElementById('pdf-index').innerText = currentUser.index || "0000";
+            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('pdf-level').innerText = level;
+            document.getElementById('pdf-field').innerText = categoryName;
+            document.getElementById('pdf-points').innerText = currentScore.toFixed(3);
+            
+            const tbody = document.getElementById('pdf-course-list');
+            tbody.innerHTML = "";
+            fetchedCourses.slice(0, 15).forEach(c => {
+                tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
+            });
+
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block'; 
+
+            setTimeout(() => {
+                html2pdf()
+                    .set({ margin:10, filename:`Career_Report_${currentUser.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} })
+                    .from(element)
+                    .save()
+                    .then(() => { element.style.display = 'none'; });
+            }, 500);
+        }
+    </script>
 </body>
 </html>
