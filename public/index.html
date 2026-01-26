@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KUCCPS Career Portal</title>
     
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     
@@ -192,35 +193,25 @@
         let currentStudent = { name: "Student", index: "0000", hasPaid: 0 }; 
         let currentPoints = 0;
 
-        // Dropdowns setup
         const gradeList = [{val:12,txt:"A"},{val:11,txt:"A-"},{val:10,txt:"B+"},{val:9,txt:"B"},{val:8,txt:"B-"},{val:7,txt:"C+"},{val:6,txt:"C"},{val:5,txt:"C-"},{val:4,txt:"D+"},{val:3,txt:"D"},{val:2,txt:"D-"},{val:1,txt:"E"},{val:0,txt:"Not Taken"}];
         document.querySelectorAll('.grade-select').forEach(s => gradeList.forEach(g => { let o=document.createElement('option'); o.value=g.val; o.innerText=g.txt; if(g.val===0)o.selected=true; s.appendChild(o); }));
         const techSubjects = ["Agriculture","Business Studies","Computer Studies","Home Science","French","German","Music","Aviation"];
         techSubjects.forEach(s => { let o=document.createElement('option'); o.value=s; o.innerText=s; document.getElementById('tech-subject-name').appendChild(o); });
 
-        // --- 2. SWITCHING SCREENS (THE FIX) ---
+        // --- 2. SWITCHING SCREENS ---
         function switchView(viewName) {
-            // Hide everything first
             document.getElementById('auth-selection').classList.add('hidden');
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('signupForm').classList.add('hidden');
             document.getElementById('dashboard-section').classList.add('hidden');
             document.getElementById('results-page').classList.add('hidden');
 
-            // Show target
-            if (viewName === 'login') {
-                document.getElementById('loginForm').classList.remove('hidden');
-            } else if (viewName === 'signup') {
-                document.getElementById('signupForm').classList.remove('hidden');
-            } else if (viewName === 'selection') {
-                document.getElementById('auth-selection').classList.remove('hidden');
-            } else if (viewName === 'dashboard') {
-                document.getElementById('dashboard-section').classList.remove('hidden');
-            } else if (viewName === 'results') {
-                document.getElementById('results-page').classList.remove('hidden');
-            }
+            if (viewName === 'login') document.getElementById('loginForm').classList.remove('hidden');
+            else if (viewName === 'signup') document.getElementById('signupForm').classList.remove('hidden');
+            else if (viewName === 'selection') document.getElementById('auth-selection').classList.remove('hidden');
+            else if (viewName === 'dashboard') document.getElementById('dashboard-section').classList.remove('hidden');
+            else if (viewName === 'results') document.getElementById('results-page').classList.remove('hidden');
 
-            // SAVE to memory
             localStorage.setItem('activeView', viewName);
         }
 
@@ -228,14 +219,10 @@
         function showSignup() { switchView('signup'); }
         function showSelection() { switchView('selection'); }
 
-        // --- 3. AUTH FUNCTION (SAVE PAYMENT STATUS) ---
+        // --- 3. AUTH FUNCTION ---
         const handleAuth = async (url, data, isLogin, hideId) => {
             try {
-                const res = await fetch(url, { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify(data) 
-                });
+                const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
                 const json = await res.json();
                 
                 if(res.ok) {
@@ -246,20 +233,13 @@
                         document.getElementById('signup-name').value = '';
                         document.getElementById('signup-pass').value = '';
                     } else {
-                        currentStudent = { 
-                            name: json.user.name, 
-                            index: json.user.index, 
-                            hasPaid: json.user.hasPaid 
-                        };
-                        
-                        // SAVE NAME AND PAYMENT STATUS
+                        currentStudent = { name: json.user.name, index: json.user.index, hasPaid: json.user.hasPaid };
                         localStorage.setItem('userIndex', currentStudent.index);
                         localStorage.setItem('userName', currentStudent.name);
                         localStorage.setItem('userHasPaid', currentStudent.hasPaid);
                         
                         updateUI(true); 
-                        switchView('dashboard'); // Default after login
-
+                        switchView('dashboard'); 
                         if(json.user.grades) {
                             alert("✅ Welcome back! Loading your saved grades...");
                             localStorage.setItem('savedGrades', JSON.stringify(json.user.grades));
@@ -281,7 +261,6 @@
             }
         }
 
-        // --- 4. LISTENERS ---
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
             loginForm.addEventListener('submit', async (e) => {
@@ -301,25 +280,16 @@
             }, false, 'signupForm'); 
         });
 
-        // --- 5. PAGE LOAD (RESTORE PAYMENT STATUS) ---
+        // --- 5. PAGE LOAD ---
         window.addEventListener('load', async () => {
-            
-            // A. CHECK IF LOGGED IN
             const savedIndex = localStorage.getItem('userIndex');
             const savedName = localStorage.getItem('userName');
-            const savedPaid = localStorage.getItem('userHasPaid'); // Retrieve payment status
+            const savedPaid = localStorage.getItem('userHasPaid'); 
             
             if (savedIndex) {
-                // Restore User including 'hasPaid' status
-                currentStudent = { 
-                    name: savedName, 
-                    index: savedIndex, 
-                    hasPaid: parseInt(savedPaid) || 0 
-                }; 
-                
+                currentStudent = { name: savedName, index: savedIndex, hasPaid: parseInt(savedPaid) || 0 }; 
                 updateUI(true); 
 
-                // ALWAYS RESTORE COURSES IF AVAILABLE
                 const savedCourses = JSON.parse(localStorage.getItem('fetchedCourses'));
                 const savedPoints = localStorage.getItem('currentPoints');
                 if(savedCourses && savedCourses.length > 0) {
@@ -327,52 +297,25 @@
                     currentPoints = savedPoints || 0;
                 }
 
-                // RESTORE VIEW
                 const activeView = localStorage.getItem('activeView') || 'dashboard';
                 if(activeView === 'results') {
-                    if(fetchedCourses.length > 0) {
-                        viewCourses(); 
-                    } else {
-                        switchView('dashboard'); 
-                    }
-                } else {
-                    switchView('dashboard');
-                }
+                    if(fetchedCourses.length > 0) viewCourses(); 
+                    else switchView('dashboard'); 
+                } else { switchView('dashboard'); }
 
                 const savedGrades = JSON.parse(localStorage.getItem('savedGrades'));
                 if(savedGrades) restoreForm(savedGrades);
             } else {
-                // NOT LOGGED IN?
                 const activeView = localStorage.getItem('activeView');
-                if(activeView === 'login' || activeView === 'signup') {
-                    switchView(activeView);
-                } else {
-                    switchView('selection'); 
-                }
-            }
-
-            // B. CHECK PAYSTACK RETURN (SAVE NEW PAYMENT)
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('reference')) {
-                if (savedIndex) {
-                    currentStudent = { name: savedName, index: savedIndex, hasPaid: 1 };
-                    
-                    // UPDATE MEMORY
-                    localStorage.setItem('userHasPaid', '1');
-
-                    updateUI(true);
-                    await fetch('/verify-payment', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ index_number: savedIndex }) });
-                    restoreAndCalculate();
-                    window.history.replaceState({}, document.title, "/");
-                }
+                if(activeView === 'login' || activeView === 'signup') switchView(activeView);
+                else switchView('selection'); 
             }
         });
 
-        // --- 6. LOGOUT ---
         function logoutUser() {
             localStorage.removeItem('userIndex');
             localStorage.removeItem('userName');
-            localStorage.removeItem('userHasPaid'); // Clear payment memory
+            localStorage.removeItem('userHasPaid'); 
             localStorage.removeItem('activeView'); 
             localStorage.removeItem('fetchedCourses'); 
             location.reload();
@@ -420,14 +363,38 @@
             } catch(e) { console.log("Error restoring form", e); }
         }
 
-        async function initiatePayment() {
+        // ===========================================
+        // ⚠️ PAYSTACK PAYMENT FUNCTION (LIVE MODE)
+        // ===========================================
+        function initiatePayment() {
             const btn = document.querySelector('.primary-btn');
             btn.innerText = "Processing Payment...";
-            try {
-                const res = await fetch('/pay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: currentStudent.index + "@student.ke", amount: 50 }) });
-                const data = await res.json();
-                if (data.authorization_url) window.location.href = data.authorization_url;
-            } catch(e) { alert("Payment Error"); btn.innerText = "Calculate & Check"; }
+
+            const paystack = new PaystackPop();
+            paystack.newTransaction({
+                
+                // 👇 PASTE YOUR LIVE KEY HERE 👇
+                key: 'sk_live_7eff5d6b4bc67c0a8df4ed179cae6b6d542707fa', 
+                
+                email: currentStudent.index + "@student.ke", 
+                amount: 10 * 100, // KES 50.00
+                currency: 'KES',
+                
+                onSuccess: (transaction) => {
+                    console.log("Payment complete:", transaction);
+                    currentStudent.hasPaid = 1;
+                    localStorage.setItem('userHasPaid', '1');
+                    
+                    updateUI(true);
+                    restoreAndCalculate();
+                    alert("Payment Successful! ✅\nYou can now download your report.");
+                },
+                
+                onCancel: () => {
+                    alert("Payment cancelled.");
+                    btn.innerText = "Calculate & Check";
+                }
+            });
         }
 
         async function restoreAndCalculate() {
@@ -449,14 +416,12 @@
             }
             const weightedPoints = Math.sqrt((R/48) * (API/84)) * 48;
             currentPoints = weightedPoints.toFixed(3);
-            localStorage.setItem('currentPoints', currentPoints); // SAVE POINTS
+            localStorage.setItem('currentPoints', currentPoints); 
 
             try {
                 const res = await fetch('/recommend', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ points: weightedPoints, category: saved.category, level: saved.level, meanGrade: saved.mean }) });
                 const data = await res.json();
                 fetchedCourses = data.results;
-                
-                // SAVE RESULTS TO MEMORY!
                 localStorage.setItem('fetchedCourses', JSON.stringify(fetchedCourses));
 
                 document.getElementById('modal-points').innerText = currentPoints;
@@ -467,8 +432,7 @@
 
         function viewCourses() {
             document.getElementById('score-modal').classList.add('hidden');
-            switchView('results'); // Saves location
-            
+            switchView('results'); 
             const cont = document.getElementById('course-list-container');
             cont.innerHTML = "";
             if(fetchedCourses && fetchedCourses.length > 0) {
@@ -478,15 +442,11 @@
         
         function closeModal(){ document.getElementById('score-modal').classList.add('hidden'); }
         
-        // --- 9. PDF DOWNLOAD (FIXED BLANK ISSUE) ---
         function downloadPDF() {
-            // Check if data is ready
             if(!fetchedCourses || fetchedCourses.length === 0) {
                 alert("Please calculate your points first!");
                 return;
             }
-
-            // Fill data
             const level = document.getElementById('education-level').value.toUpperCase();
             const categorySelect = document.getElementById('career-field');
             const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
@@ -504,11 +464,9 @@
                 tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.school}</td><td>${c.cutoff ? c.cutoff : 'Qualified'}</td></tr>`;
             });
 
-            // Show template momentarily to capture it
             const element = document.getElementById('pdf-template');
             element.style.display = 'block'; 
 
-            // Use timeout to ensure DOM updates before capture
             setTimeout(() => {
                 html2pdf()
                     .set({ margin:10, filename:`Career_Report_${currentStudent.index}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} })
